@@ -62,16 +62,17 @@ def test_device_next_204_when_empty(client):
     assert _next(client).status_code == 204
 
 
-def test_device_next_rotates_and_wraps(logged_in):
+def test_device_next_alternates_two_photos(logged_in):
     a = _upload(logged_in, (255, 0, 0)).json()["id"]
     b = _upload(logged_in, (0, 0, 255)).json()["id"]
     ids = []
-    for _ in range(3):
+    for _ in range(4):
         r = _next(logged_in)
         assert r.status_code == 200
         assert len(r.content) == FRAME_BYTES
         ids.append(int(r.headers["X-Photo-Id"]))
-    assert ids == [a, b, a]
+    assert set(ids) == {a, b}
+    assert all(x != y for x, y in zip(ids, ids[1:]))
 
 
 def test_upload_requires_login(client):
@@ -87,6 +88,7 @@ def test_login_wrong_password(client):
 def test_upload_rejects_non_image(logged_in):
     r = logged_in.post("/api/photos", files={"file": ("p.jpg", b"hello", "image/jpeg")})
     assert r.status_code == 400
+    assert r.json()["detail"] == "not a photo the server can read (use JPEG, PNG or WebP)"
     assert logged_in.get("/api/photos").json() == []
 
 
@@ -171,3 +173,103 @@ def test_frames_not_rerendered_when_settings_unchanged(logged_in, tmp_path):
     with TestClient(create_app(), base_url="https://testserver"):
         pass
     assert frame.read_bytes() == b"\x11" * FRAME_BYTES
+
+
+# --- Shuffle rotation, "show next", status and images (Erik's page features) ---
+
+def _ids(c, n):
+    return [int(_next(c).headers["X-Photo-Id"]) for _ in range(n)]
+
+
+def test_each_photo_once_per_round(logged_in):
+    ids = {_upload(logged_in).json()["id"] for _ in range(5)}
+    assert set(_ids(logged_in, 5)) == ids
+    assert set(_ids(logged_in, 5)) == ids
+
+
+def test_never_same_photo_twice_in_a_row(logged_in):
+    for _ in range(3):
+        _upload(logged_in)
+    seen = _ids(logged_in, 60)
+    assert all(x != y for x, y in zip(seen, seen[1:]))
+
+
+def test_rounds_are_shuffled(logged_in):
+    for _ in range(6):
+        _upload(logged_in)
+    rounds = {tuple(_ids(logged_in, 6)) for _ in range(10)}
+    assert len(rounds) > 1
+
+
+def test_new_upload_shows_in_current_round(logged_in):
+    for _ in range(4):
+        _upload(logged_in)
+    _ids(logged_in, 1)
+    new = _upload(logged_in).json()["id"]
+    assert new in _ids(logged_in, 4)
+
+
+def test_deleted_photo_never_shown(logged_in):
+    a, b, c = (_upload(logged_in).json()["id"] for _ in range(3))
+    logged_in.delete(f"/api/photos/{b}")
+    assert b not in _ids(logged_in, 9)
+
+
+def test_show_next_overrides_shuffle(logged_in):
+    ids = [_upload(logged_in).json()["id"] for _ in range(4)]
+    _ids(logged_in, 1)
+    for pick in ids:
+        assert logged_in.post(f"/api/photos/{pick}/next").status_code == 200
+        assert _ids(logged_in, 1) == [pick]
+
+
+def test_show_next_requires_login_and_photo(client, logged_in):
+    pid = _upload(logged_in).json()["id"]
+    assert logged_in.post("/api/photos/999/next").status_code == 404
+    client.cookies.clear()
+    assert client.post(f"/api/photos/{pid}/next").status_code == 401
+
+
+def test_status_reports_magnet(logged_in):
+    for _ in range(3):
+        _upload(logged_in)
+    empty = logged_in.get("/api/status").json()
+    assert empty["last_seen"] is None and empty["battery_mv"] is None
+    shown = int(_next(logged_in, bat_mv=3900).headers["X-Photo-Id"])
+    st = logged_in.get("/api/status").json()
+    assert st["battery_mv"] == 3900
+    assert st["battery_low"] is False
+    assert st["last_seen"] is not None
+    assert st["current_id"] == shown
+    assert _ids(logged_in, 1) == [st["next_id"]]
+
+
+def test_status_requires_login(client):
+    assert client.get("/api/status").status_code == 401
+
+
+def test_photo_images(logged_in):
+    pid = _upload(logged_in, (200, 30, 30)).json()["id"]
+    r = logged_in.get(f"/api/photos/{pid}/image?view=original")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+    assert Image.open(io.BytesIO(r.content)).size == (480, 720)
+    r = logged_in.get(f"/api/photos/{pid}/image?view=panel")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    img = Image.open(io.BytesIO(r.content)).convert("RGB")
+    assert img.size == (480, 720)
+    import imaging
+    assert {c for _, c in img.getcolors(10)} <= set(imaging.PALETTE.values())
+
+
+def test_photo_images_require_login_and_photo(client, logged_in):
+    pid = _upload(logged_in).json()["id"]
+    assert logged_in.get("/api/photos/999/image?view=original").status_code == 404
+    assert logged_in.get(f"/api/photos/{pid}/image?view=other").status_code == 422
+    client.cookies.clear()
+    assert client.get(f"/api/photos/{pid}/image?view=original").status_code == 401
+
+
+def test_logout_ends_session(logged_in):
+    assert logged_in.get("/api/photos").status_code == 200
+    assert logged_in.post("/logout").status_code == 200
+    assert logged_in.get("/api/photos").status_code == 401

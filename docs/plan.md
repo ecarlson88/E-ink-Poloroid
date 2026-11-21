@@ -71,7 +71,7 @@ Remaining follow-up: PALETTE RGB values are nominal pure colors and are tuned in
 
 **Produces (the contract Task 4 calls):**
 
-- `GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <DEVICE_TOKEN>` returns `200 application/octet-stream`, a 172,800-byte frame, and header `X-Photo-Id`. It returns `204` when no photos exist and `401` for a missing or wrong token. Each call advances to the next photo and wraps at the end.
+- `GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <DEVICE_TOKEN>` returns `200 application/octet-stream`, a 172,800-byte frame, and header `X-Photo-Id`. It returns `204` when no photos exist and `401` for a missing or wrong token. Each call takes the next photo from a shuffle (each photo once per round, never the same twice in a row; Erik can pick the next one on the page).
 - `POST /login` (form field `password`, checked against env `UPLOAD_PASSWORD_HASH`) sets a session cookie. `POST /api/photos` (multipart `file`), `GET /api/photos` and `DELETE /api/photos/{id}` require that cookie and return `401` without it.
 - `notify_low_battery(battery_mv: int) -> None` in `notify.py` posts JSON `{"battery_mv": n}` to env `LOW_BATTERY_WEBHOOK_URL`.
 - Config comes from env: `DEVICE_TOKEN`, `UPLOAD_PASSWORD_HASH`, `SESSION_SECRET`, `LOW_BATTERY_WEBHOOK_URL`, `DATA_DIR`.

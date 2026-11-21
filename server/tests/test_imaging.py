@@ -3,7 +3,7 @@ import io
 import pytest
 from PIL import Image
 
-from imaging import PALETTE, render_frame
+from imaging import PALETTE, frame_to_image, render_frame
 
 FRAME_BYTES = 172_800
 RED = PALETTE[3]
@@ -69,3 +69,18 @@ def test_rejects_non_image():
 def test_rejects_decompression_bomb():
     with pytest.raises(ValueError):
         render_frame(_png(Image.new("1", (10_000, 10_000))))
+
+
+
+def test_frame_to_image_round_trips_exact_pixels():
+    """Palette-colored 1-px stripes, different in the top and bottom halves,
+    must come back pixel for pixel (catches nibble-order and row mistakes)."""
+    img = Image.new("RGB", (480, 720))
+    top, bottom = (PALETTE[0], PALETTE[2]), (PALETTE[5], PALETTE[3])
+    for y in range(720):
+        pair = top if y < 360 else bottom
+        for x in range(480):
+            img.putpixel((x, y), pair[x % 2])
+    out = frame_to_image(render_frame(_png(img)))
+    assert out.mode == "RGB" and out.size == (480, 720)
+    assert out.tobytes() == img.tobytes()

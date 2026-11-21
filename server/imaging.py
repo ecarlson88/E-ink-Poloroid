@@ -8,6 +8,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 WIDTH, HEIGHT = 480, 720
 MAX_PIXELS = 50_000_000
+UNREADABLE = "not a photo the server can read (use JPEG, PNG or WebP)"
 
 # Nibble value -> nominal RGB. Tuned against the real panel in Task 4 Step 6.
 PALETTE: dict[int, tuple[int, int, int]] = {
@@ -50,8 +51,9 @@ def _palette_image() -> Image.Image:
     return pal
 
 
-def render_frame(photo: bytes) -> bytes:
-    """Return exactly 172,800 bytes for the panel, or raise ValueError."""
+def _fit_photo(photo: bytes) -> Image.Image:
+    """Decode a photo, turn it upright, flatten transparency onto white and
+    crop it to fill the frame. Raises ValueError for unusable input."""
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -61,7 +63,9 @@ def render_frame(photo: bytes) -> bytes:
             img.load()
     except ValueError:
         raise
-    except (UnidentifiedImageError, Image.DecompressionBombError,
+    except UnidentifiedImageError as exc:
+        raise ValueError(UNREADABLE) from exc
+    except (Image.DecompressionBombError,
             Image.DecompressionBombWarning, OSError) as exc:
         raise ValueError(f"not a usable image: {exc}") from exc
 
@@ -73,8 +77,12 @@ def render_frame(photo: bytes) -> bytes:
         img = flat
     else:
         img = img.convert("RGB")
+    return ImageOps.fit(img, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
 
-    img = ImageOps.fit(img, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
+
+def render_frame(photo: bytes) -> bytes:
+    """Return exactly 172,800 bytes for the panel, or raise ValueError."""
+    img = _fit_photo(photo)
     quant = img.quantize(palette=_palette_image(), dither=Image.Dither.FLOYDSTEINBERG)
     table = bytes(_NIBBLES[i] if i < len(_NIBBLES) else 0 for i in range(256))
     nibbles = quant.tobytes().translate(table)
@@ -83,3 +91,29 @@ def render_frame(photo: bytes) -> bytes:
     if not HIGH_NIBBLE_IS_LEFT:
         first, second = second, first
     return bytes((a << 4) | b for a, b in zip(first, second))
+
+
+def frame_to_image(frame: bytes) -> Image.Image:
+    """Decode a packed frame back to an RGB image, as the panel will draw it
+    (in PALETTE colors, which are nominal until Task 4 Step 6 tunes them)."""
+    if len(frame) != WIDTH * HEIGHT // 2:
+        raise ValueError("frame has the wrong length")
+    high = bytes(b >> 4 for b in range(256))
+    low = bytes(b & 0x0F for b in range(256))
+    first, second = frame.translate(high), frame.translate(low)
+    if not HIGH_NIBBLE_IS_LEFT:
+        first, second = second, first
+    nibbles = bytearray(WIDTH * HEIGHT)
+    nibbles[0::2], nibbles[1::2] = first, second
+    lut = [0] * 768
+    for nibble, rgb in PALETTE.items():
+        lut[nibble * 3:nibble * 3 + 3] = rgb
+    img = Image.frombytes("P", (WIDTH, HEIGHT), bytes(nibbles))
+    img.putpalette(lut)
+    return img.convert("RGB")
+
+
+def preview_original(photo: bytes) -> Image.Image:
+    """The photo cropped exactly as on the panel, in true color: what the web
+    page shows before the panel preview is toggled on."""
+    return _fit_photo(photo)
