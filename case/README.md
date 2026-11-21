@@ -1,5 +1,7 @@
 # Case (Task 7)
 
+**CAD: `solidcraft/`** holds the parametric SolidCraft design (v0) with STEP and STL exports.
+
 `layout.py` draws the proposed layout to scale  from the numbers in
 `docs/case-dimensions.md`. Rerun it after measuring the parts: `python3 case/layout.py`
 (writes `layout_v1.png`)

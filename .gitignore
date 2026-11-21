@@ -6,3 +6,4 @@ __pycache__/
 firmware/magnet/secrets.h
 .env
 data/
+*.bak
