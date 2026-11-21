@@ -1,5 +1,8 @@
-# The magnet server behind a Cloudflare Tunnel. Secrets come from .env
-# (git-ignored; copy .env.example). Setup steps: server/README.md.
+# The magnet server. Secrets come from .env (git-ignored; copy .env.example).
+# HTTPS comes from a Cloudflare Tunnel: either the cloudflared already
+# installed on the host (default; point it at http://localhost:8000), or the
+# optional container below (`docker compose --profile tunnel up -d`).
+# Setup steps: server/README.md.
 services:
   magnet:
     build: ./server
@@ -8,14 +11,15 @@ services:
     volumes:
       - magnet-data:/data      # photos, frames and the database; see server/README.md for backups
     ports:
-      - "127.0.0.1:8000:8000"   # local checks only; the internet reaches it through the tunnel
+      - "127.0.0.1:8000:8000"   # only this machine (and its cloudflared) can reach it
 
-  tunnel:
+  tunnel:   # optional: only for a server without cloudflared installed
+    profiles: ["tunnel"]
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     depends_on:
       - magnet
 
