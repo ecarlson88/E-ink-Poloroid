@@ -67,6 +67,8 @@ PARAMS = [
     ("MagSkin", "0.4 mm", "plastic between magnet and fridge"),
     ("MagGap", "0.2 mm", "magnet pocket oversize"),
     ("BossWall", "1 mm", "wall around a magnet pocket"),
+    ("RibT", "1.2 mm", "cross rib thickness (under the panel's bottom edge)"),
+    ("RibGap", "30 mm", "centre gap in the cross ribs for the panel cable and wires"),
     ("LipW", "0.8 mm", "front frame locating lip width"),
     ("LipH", "0.6 mm", "front frame locating lip height"),
     ("LipGap", "0.15 mm", "lip clearance to the shell wall"),
@@ -85,6 +87,7 @@ PARAMS = [
     ("XiaoX", "CaseW - UsbOver - XiaoW", "XIAO left edge (USB-C face flush with the right side)"),
     ("XiaoY", "ChinWall + Clear", "XIAO bottom edge"),
     ("UsbCY", "XiaoY + XiaoH / 2", "USB-C centre height"),
+    ("RibY", "PanelY - Clear - RibT", "cross rib bottom edge"),
     ("PinX", "XiaoX + XiaoW - BtnFromEnd", "pinhole x (over a XIAO button)"),
     ("PinY", "XiaoY + BtnFromSide", "pinhole y (the lower button: check which is reset)"),
     ("AdapterY", "PanelY + FpcLen - Fold - 3 mm", "adapter bottom edge (folded cable end)"),
@@ -177,6 +180,16 @@ else:
         c("sketch.dimension", entities=[f"c{i}"], type="diameter", value="MagD + MagGap")
     c("sketch.finish")
     c("solid.extrude", distance="MagT", direction="negative", operation="cut", targets=["BackShell"], name="Pockets")
+
+# Cross ribs: from the back wall up to the front frame, just below the panel's bottom edge,
+# with a centre gap for the panel cable's fold and the wires. They support the frame across
+# its middle (a second glue line), stop the panel's bottom edge and stiffen the shell.
+c("sketch.create", plane="XY", offset="BackWall", name="CrossRibs")
+# The ribs stop short of the side walls so the front frame's lip (just inside the walls) passes.
+rect("Wall + 2 * LipGap + LipW", "RibY", "CaseW / 2 - RibGap / 2", "RibY + RibT")
+rect("CaseW / 2 + RibGap / 2", "RibY", "CaseW - Wall - 2 * LipGap - LipW", "RibY + RibT")
+c("sketch.finish")
+c("solid.extrude", distance="InnerD", operation="join", targets=["BackShell"], name="Ribs")
 
 # Pinhole through the back wall, over one of the XIAO's buttons.
 c("sketch.create", plane="XY", name="Pinhole")

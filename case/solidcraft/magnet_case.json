@@ -306,6 +306,22 @@
  {
   "command": "parameters.add",
   "params": {
+   "name": "RibT",
+   "expression": "1.2 mm",
+   "comment": "cross rib thickness (under the panel's bottom edge)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RibGap",
+   "expression": "30 mm",
+   "comment": "centre gap in the cross ribs for the panel cable and wires"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
    "name": "LipW",
    "expression": "0.8 mm",
    "comment": "front frame locating lip width"
@@ -437,6 +453,14 @@
    "name": "UsbCY",
    "expression": "XiaoY + XiaoH / 2",
    "comment": "USB-C centre height"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RibY",
+   "expression": "PanelY - Clear - RibT",
+   "comment": "cross rib bottom edge"
   }
  },
  {
@@ -1239,6 +1263,77 @@
     "BackShell"
    ],
    "name": "Pockets"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BackWall",
+   "name": "CrossRibs"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "Wall + 2 * LipGap + LipW",
+     "RibY"
+    ],
+    [
+     "CaseW / 2 - RibGap / 2",
+     "RibY"
+    ],
+    [
+     "CaseW / 2 - RibGap / 2",
+     "RibY + RibT"
+    ],
+    [
+     "Wall + 2 * LipGap + LipW",
+     "RibY + RibT"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "CaseW / 2 + RibGap / 2",
+     "RibY"
+    ],
+    [
+     "CaseW - Wall - 2 * LipGap - LipW",
+     "RibY"
+    ],
+    [
+     "CaseW - Wall - 2 * LipGap - LipW",
+     "RibY + RibT"
+    ],
+    [
+     "CaseW / 2 + RibGap / 2",
+     "RibY + RibT"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "InnerD",
+   "operation": "join",
+   "targets": [
+    "BackShell"
+   ],
+   "name": "Ribs"
   }
  },
  {

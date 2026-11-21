@@ -31,7 +31,12 @@ Two magnet options, same everything else:
     the chin to below the top corners, opened from the inside, leaving a 0.4 mm skin to
     the fridge;
   - a 1.2 mm pinhole over one of the XIAO's buttons;
-  - a notch through the back and the right side for the USB-C receptacle, its face flush with the outside.
+  - a notch through the back and the right side for the USB-C receptacle, its face flush with the outside;
+  - two cross ribs (1.2 thick, `RibT`) from the back wall up to the frame, just below the
+    panel's bottom edge, either side of a 30 mm centre gap (`RibGap`) for the panel cable's
+    fold and the wires. They support the frame across its middle (a second glue line),
+    stop the panel's bottom edge and stiffen the shell. They stop 0.15 mm short of the
+    frame's lip at each end.
 - **FrontFrame**: a 1.0 mm plate with the window (active area minus 0.5 mm per side) and a
   0.6 mm locating lip that drops inside the shell walls with 0.15 mm clearance.
 
@@ -44,6 +49,10 @@ In SolidCraft, open the **Parameters** panel and change a value. The derived siz
 and rebuild with it. Checked here: changing MagL, MagW, XiaoBodyT and AAW together rebuilt every feature without
 errors (an earlier check with the disc magnets changed six values at once). With a 2 mm XIAO the case drops to 6.6
 mm, because the panel and battery then set the depth.
+
+Check that the parts don't overlap after a change: run `inspect.interference` (SolidCraft's
+Inspect menu, or `solidcraft-cli run` with `[{"command": "inspect.interference", "params": {}}]`).
+Both versions report 0. It caught the first rib version running into the frame's lip.
 
 One limit: the magnet boss height is `MagSkin + MagT - BackWall`. If the magnets are
 thinner than `BackWall - MagSkin` (0.6 mm), that height is zero or negative and the

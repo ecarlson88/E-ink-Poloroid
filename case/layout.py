@@ -45,6 +45,7 @@ MAG_PER_SIDE = 6
 MAG_GAP, BOSS_WALL = 0.2, 1.0
 SHELL_WALL, CORNER_R = 1.2, 4.0          # back shell side wall and outer corner radius (as in the CAD)
 MAGNET_SKIN, MAGNET_CAP = 0.4, 0.0   # Erik: pocket open on the inside, 0.4 skin on the fridge side, magnet glued in
+RIB_T, RIB_GAP = 1.2, 30.0          # Erik: cross ribs under the panel's bottom edge, a centre gap for cable and wires
 MAGNET_CLEAR = 0.5                   # keep each magnet's boss this far from any part
 MASK = 0.5                           # the frame overlaps the active area by this much per side
 # XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
@@ -106,6 +107,16 @@ for b in BOSSES:
 assert inner_depth - PANEL_T - CLEAR >= boss, "no room behind the panel for a magnet boss"
 min_gap_to_battery = batt_x - (SHELL_WALL + boss_w)
 
+# Cross ribs: from the back wall to the front frame, just below the panel's bottom edge,
+# left and right of a centre gap that the panel cable's fold and the wires pass through.
+rib_y = panel_y - CLEAR - RIB_T
+RIBS = [(SHELL_WALL, rib_y, CASE_W / 2 - RIB_GAP / 2 - SHELL_WALL, RIB_T),
+        (CASE_W / 2 + RIB_GAP / 2, rib_y, CASE_W / 2 - RIB_GAP / 2 - SHELL_WALL, RIB_T)]
+rib_to_xiao = rib_y - (xiao_y + XIAO_H)
+assert rib_to_xiao >= CLEAR, rib_to_xiao
+fpc_x0 = panel_x + (PANEL_W - FPC_TAIL_W) / 2
+assert CASE_W / 2 - RIB_GAP / 2 <= fpc_x0 - 1 and CASE_W / 2 + RIB_GAP / 2 >= fpc_x0 + FPC_TAIL_W + 1, "rib gap narrower than the cable"
+
 fig, (ax, sx) = plt.subplots(1, 2, figsize=(13, 11), gridspec_kw={"width_ratios": [3, 1.1]})
 INK, MUTED = "#15171A", "#5C636E"
 
@@ -130,6 +141,9 @@ fpc_x = panel_x + (PANEL_W - FPC_EXIT_W) / 2
 box(ax, fpc_x, panel_y - FOLD, FPC_EXIT_W, FOLD, color="#B26B00", ls=":", fill="#F6E3B4", alpha=0.6)
 ax.text(fpc_x + FPC_EXIT_W / 2, panel_y - FOLD - 0.6, "FPC folds back here", ha="center", va="top", fontsize=7, color="#B26B00")
 box(ax, xiao_x, xiao_y, XIAO_W, XIAO_H, "XIAO\nESP32-S3", color="#2F8A4E", fs=8)
+for rx, ry, rw, rh in RIBS:
+    box(ax, rx, ry, rw, rh, color=INK, fill="#C9CDD3")
+ax.text(SHELL_WALL + 1, rib_y - 0.6, f"cross ribs (gap {RIB_GAP:g})", fontsize=6, color=INK, va="top")
 ax.add_patch(Rectangle((xiao_x + XIAO_W, xiao_y + (XIAO_H - USB_W) / 2), USB_OVERHANG, USB_W, color="#2F8A4E", alpha=0.6))
 ax.add_patch(FancyArrowPatch((CASE_W + 0.5, xiao_y + XIAO_H / 2), (CASE_W + 7, xiao_y + XIAO_H / 2), arrowstyle="-|>", mutation_scale=12, color="#2F8A4E"))
 ax.text(CASE_W + 7.5, xiao_y + XIAO_H / 2, "USB-C", va="center", fontsize=8, color="#2F8A4E")
@@ -197,6 +211,7 @@ print(f"case {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f}; chin {CHIN_H:.1f}; inne
 print(f"{MAG_STYLE}: {len(DISCS)} discs at {[(round(x, 1), round(y, 1)) for x, y in DISCS]}" if DISCS else f"{len(BOSSES)} magnet bars, pitch {pitch:.1f}, rows y {mag_bottom:.1f}..{mag_top:.1f}; boss {boss:.1f} into the cavity; gap boss-to-battery {min_gap_to_battery:.1f}")
 pin_travel = CASE_T - (FRONT_WALL + CLEAR + JOINT + PCB_T + BTN_TOP)
 print(f"pinhole at x {pin_x:.1f}, y {pin_y:.1f} (or y {btn_ys[1]:.1f}); pin travels {pin_travel:.1f} from the back face to the button")
+print(f"ribs at y {rib_y:.1f}..{rib_y + RIB_T:.1f}, gap x {CASE_W / 2 - RIB_GAP / 2:.1f}..{CASE_W / 2 + RIB_GAP / 2:.1f} (cable {fpc_x0:.1f}..{fpc_x0 + FPC_TAIL_W:.1f}); {rib_to_xiao:.1f} above the XIAO")
 print(f"usb-c top {usb_top:.2f} vs back face {CASE_T:.2f}: {usb_top - CASE_T:+.2f} (negative = inside)")
 print(f"xiao x {xiao_x:.1f}..{xiao_x + XIAO_W:.1f} (inner wall at {CASE_W - CHIN_WALL:.1f}); usb face at {xiao_x + XIAO_W + USB_OVERHANG:.1f}")
 print(f"adapter y {adapter_y:.1f}..{adapter_y + ADAPTER_H:.1f}; battery y {batt_y:.1f}..{batt_y + BATT_H:.1f}; panel top {panel_y + PANEL_H:.1f}; case top {CASE_H:.1f}")

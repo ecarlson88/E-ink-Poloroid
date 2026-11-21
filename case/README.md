@@ -33,6 +33,9 @@ About **64.6 x 110.8 x 6.8 mm**.
   guide tube from the inside of the back wall would stop it slipping off. **Erik: the
   reset button** (double press = setup mode). Check which of the two buttons is reset on
   the real board; `PinY` in the CAD picks the lower one.
+- **Cross ribs** (Erik): two 1.2 mm ribs from the back wall to the frame, just below the
+  panel's bottom edge, with a 30 mm centre gap for the panel cable's fold and the wires.
+  1.1 mm above the XIAO; the gap clears the 26 mm cable by 2 mm each side.
 - **Magnets:** 12 **8 x 3 x 1 bars** (Erik), six upright along each side wall from above
   the chin to below the top corners. They are **glued into pockets** in the back wall,
   open on the inside. Each pocket leaves a 0.4 mm skin on the fridge side and its pad
