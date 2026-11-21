@@ -32,7 +32,7 @@ FOLD = 2.0                           # room under the panel for the FPC's fold
 CHIN_WALL = 1.2
 FRONT_WALL, BACK_WALL = 1.0, 1.0
 MAGNET_D, MAGNET_T = 8.0, 1.0
-MAGNET_SKIN, MAGNET_CAP = 0.4, 0.4   # printed over (Erik): skin on the fridge side, cap on the inside
+MAGNET_SKIN, MAGNET_CAP = 0.4, 0.0   # Erik: pocket open on the inside, 0.4 skin on the fridge side, magnet glued in
 MAGNET_CLEAR = 1.0                   # keep each magnet's boss this far from any part
 MASK = 0.5                           # the frame overlaps the active area by this much per side
 # XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
@@ -56,7 +56,7 @@ batt_y = adapter_y + ADAPTER_H + 1.5
 xiao_x = CASE_W - USB_OVERHANG - XIAO_W   # USB-C face flush with the outside of the right wall
 xiao_y = CHIN_WALL + CLEAR + (CHIN_H - FOLD - CHIN_WALL - 2 * CLEAR - XIAO_H) / 2
 
-# Magnets are printed into the back wall: each needs a boss MAGNET_SKIN + MAGNET_T + MAGNET_CAP
+# Magnets sit in pockets in the back wall: each needs a boss MAGNET_SKIN + MAGNET_T + MAGNET_CAP
 # thick, so it pokes (that - BACK_WALL) into the cavity and must sit clear of every part behind it.
 boss = MAGNET_SKIN + MAGNET_T + MAGNET_CAP - BACK_WALL
 side_l = (panel_x + adapter_x) / 2                       # beside the adapter, left and right
@@ -109,7 +109,7 @@ box(ax, 6, -0.01, 6, 1.2, color="#B26B00", fill="#B26B00")
 ax.text(9, -1.4, "setup button", ha="center", va="top", fontsize=7, color="#B26B00")
 for cx, cy in MAGNETS:
     ax.add_patch(Circle((cx, cy), MAGNET_D / 2, fill=False, ls=":", color=MUTED, lw=1.3))
-ax.text(side_l, MAGNETS[0][1] - 5.5, "magnets\nprinted into\nthe back", ha="center", va="top", fontsize=6, color=MUTED)
+ax.text(side_l, MAGNETS[0][1] - 5.5, "magnets glued\ninto back\npockets", ha="center", va="top", fontsize=6, color=MUTED)
 ax.annotate("", (0, -6), (CASE_W, -6), arrowprops=dict(arrowstyle="<->", color=INK))
 ax.text(CASE_W / 2, -7, f"{CASE_W:.1f}", ha="center", va="top", fontsize=9)
 ax.annotate("", (-6, 0), (-6, CASE_H), arrowprops=dict(arrowstyle="<->", color=INK))
