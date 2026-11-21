@@ -23,6 +23,9 @@ BATT_W, BATT_H, BATT_T = 50.0, 34.0, 3.0                # 303450, lying sideways
 XIAO_W, XIAO_H, XIAO_T = 21.0, 17.8, 4.46               # underside to top of the USB-C (STEP model)
 XIAO_BODY_T = 3.25                                       # underside to top of the shield can, no USB-C (STEP; Erik estimates ~2)
 USB_OVERHANG, USB_W, USB_LEN = 1.5, 8.9, 7.3
+BTN_FROM_END, BTN_FROM_SIDE, BTN_W, BTN_H, BTN_TOP = 1.6, 3.0, 1.6, 2.6, 0.73  # R and B buttons (STEP): centre from USB end / long edge, size, height above the PCB
+PCB_T = 1.25
+PINHOLE_D = 1.2                                          # for a straightened paperclip
 JOINT = 1.0                                              # battery wire solder joints on the underside pads (guess)
 
 # --- Case choices (v0 proposals) ---
@@ -31,7 +34,7 @@ CLEAR = 0.3                          # gap around each part
 FOLD = 2.0                           # room under the panel for the FPC's fold
 CHIN_WALL = 1.2
 FRONT_WALL, BACK_WALL = 1.0, 1.0
-MAGNET_D, MAGNET_T = 8.0, 1.0
+MAGNET_D, MAGNET_T = 8.0, 1.0       # Erik may have thinner magnets: measure
 MAGNET_SKIN, MAGNET_CAP = 0.4, 0.0   # Erik: pocket open on the inside, 0.4 skin on the fridge side, magnet glued in
 MAGNET_CLEAR = 1.0                   # keep each magnet's boss this far from any part
 MASK = 0.5                           # the frame overlaps the active area by this much per side
@@ -105,8 +108,16 @@ ax.add_patch(FancyArrowPatch((CASE_W + 0.5, xiao_y + XIAO_H / 2), (CASE_W + 7, x
 ax.text(CASE_W + 7.5, xiao_y + XIAO_H / 2, "USB-C", va="center", fontsize=8, color="#2F8A4E")
 ax.plot([xiao_x + 1.5, 8], [xiao_y + 2.5, 3.2], color="#7B3FA0", lw=2.2)
 ax.text(8, 4.6, "antenna (size TBD): along the chin, front side", fontsize=7, color="#7B3FA0")
-box(ax, 6, -0.01, 6, 1.2, color="#B26B00", fill="#B26B00")
-ax.text(9, -1.4, "setup button", ha="center", va="top", fontsize=7, color="#B26B00")
+# XIAO buttons face the back (board upside down). Which of the two is R (reset) is not known
+# from the model (they mirror each other): check the real board. The pinhole is drawn over the lower one.
+btn_x = xiao_x + XIAO_W - BTN_FROM_END
+btn_ys = (xiao_y + BTN_FROM_SIDE, xiao_y + XIAO_H - BTN_FROM_SIDE)
+for by in btn_ys:
+    box(ax, btn_x - BTN_W / 2, by - BTN_H / 2, BTN_W, BTN_H, color="#2F8A4E", fill="#BFE3C9")
+pin_x, pin_y = btn_x, btn_ys[0]
+ax.add_patch(Circle((pin_x, pin_y), PINHOLE_D / 2, color=INK))
+ax.annotate("rear pinhole over a XIAO button\n(R or B: check the real board)", (pin_x, pin_y), (24, 9.5), fontsize=7,
+            color=INK, ha="center", arrowprops=dict(arrowstyle="-", color=INK, lw=0.8))
 for cx, cy in MAGNETS:
     ax.add_patch(Circle((cx, cy), MAGNET_D / 2, fill=False, ls=":", color=MUTED, lw=1.3))
 ax.text(side_l, MAGNETS[0][1] - 5.5, "magnets glued\ninto back\npockets", ha="center", va="top", fontsize=6, color=MUTED)
@@ -150,6 +161,8 @@ out = Path(__file__).with_name("layout_v1.png")
 fig.savefig(out, dpi=110)
 print(f"case {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f}; chin {CHIN_H:.1f}; inner depth {inner_depth:.1f}")
 print(f"magnets at {[(round(x, 1), round(y, 1)) for x, y in MAGNETS]}; boss {boss:.1f} into the cavity, room {inner_depth - PANEL_T - CLEAR:.1f}")
+pin_travel = CASE_T - (FRONT_WALL + CLEAR + JOINT + PCB_T + BTN_TOP)
+print(f"pinhole at x {pin_x:.1f}, y {pin_y:.1f} (or y {btn_ys[1]:.1f}); pin travels {pin_travel:.1f} from the back face to the button")
 print(f"usb-c top {usb_top:.2f} vs back face {CASE_T:.2f}: {usb_top - CASE_T:+.2f} (negative = inside)")
 print(f"xiao x {xiao_x:.1f}..{xiao_x + XIAO_W:.1f} (inner wall at {CASE_W - CHIN_WALL:.1f}); usb face at {xiao_x + XIAO_W + USB_OVERHANG:.1f}")
 print(f"adapter y {adapter_y:.1f}..{adapter_y + ADAPTER_H:.1f}; battery y {batt_y:.1f}..{batt_y + BATT_H:.1f}; panel top {panel_y + PANEL_H:.1f}; case top {CASE_H:.1f}")

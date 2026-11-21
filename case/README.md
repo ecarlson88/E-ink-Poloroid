@@ -24,7 +24,12 @@ About **64.6 x 110.8 x 6.8 mm**.
   toward the fridge. Pointing the USB-C down would make the chin about 27 mm.
 - **Antenna** runs along the chin near the front, away from the steel door. Its size is
   still unknown.
-- **Setup button** on the bottom edge of the chin, on the left.
+- **No separate setup button** (Erik). Instead a **1.2 mm pinhole in the back** reaches
+  one of the XIAO's own buttons, which face the back because the board is upside down.
+  They sit 1.6 mm in from the USB-C end and about 3.0 mm in from each long edge (STEP
+  model). A paperclip travels about 2.6 mm from the back face to the button; a short
+  guide tube from the inside of the back wall would stop it slipping off. Which button
+  (reset or boot) is still to be decided (`docs/ledger.md`).
 - **Magnets:** 4 x 8x1 discs **glued into pockets** in the back wall, open on the inside
   (Erik). Each pocket leaves a 0.4 mm skin on the fridge side, so the wall is 1.4 mm
   there and the magnet stands 0.4 mm proud inside. That sits beside the adapter, where
