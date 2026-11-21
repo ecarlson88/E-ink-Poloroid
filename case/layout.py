@@ -20,8 +20,10 @@ AA_W, AA_H = 51.6, 77.04
 FPC_EXIT_W, FPC_TAIL_W, FPC_LEN = 20.256, 26.0, 20.0
 ADAPTER_W, ADAPTER_H, ADAPTER_T = 20.647, 35.185, 3.0   # thickness unknown (header removed); guess
 BATT_W, BATT_H, BATT_T = 50.0, 34.0, 3.0                # 303450, lying sideways
-XIAO_W, XIAO_H, XIAO_T = 21.0, 17.8, 4.5                # T includes the USB-C
-USB_OVERHANG, USB_W = 1.5, 8.9
+XIAO_W, XIAO_H, XIAO_T = 21.0, 17.8, 4.46               # underside to top of the USB-C (STEP model)
+XIAO_BODY_T = 3.25                                       # underside to top of the shield can, no USB-C (STEP; Erik estimates ~2)
+USB_OVERHANG, USB_W, USB_LEN = 1.5, 8.9, 7.3
+JOINT = 1.0                                              # battery wire solder joints on the underside pads (guess)
 
 # --- Case choices (v0 proposals) ---
 WALL_SIDE, WALL_TOP = 3.0, 3.0      # frame width around the panel at the sides and top
@@ -31,8 +33,10 @@ CHIN_WALL = 1.2
 FRONT_WALL, BACK_WALL = 1.0, 1.0
 MAGNET_D, MAGNET_T = 8.0, 1.0
 MASK = 0.5                           # the frame overlaps the active area by this much per side
+# XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
+# the back; the USB-C sits in a notch through the back shell, so only the board body sets the depth.
 
-inner_depth = max(PANEL_T + max(BATT_T, ADAPTER_T), XIAO_T) + 2 * CLEAR
+inner_depth = max(PANEL_T + max(BATT_T, ADAPTER_T), JOINT + XIAO_BODY_T) + 2 * CLEAR
 CASE_W = PANEL_W + 2 * (WALL_SIDE + CLEAR)
 CHIN_H = FOLD + XIAO_H + 2 * CLEAR + CHIN_WALL
 CASE_H = CHIN_H + PANEL_H + 2 * CLEAR + WALL_TOP
@@ -99,7 +103,14 @@ box(sx, FRONT_WALL, panel_y, PANEL_T, PANEL_H, color=MUTED, fill="#DCE6F2")
 behind = FRONT_WALL + PANEL_T + CLEAR
 box(sx, behind, batt_y, BATT_T, BATT_H, color="#B3261E", fill="#F6D6D3")
 box(sx, behind, adapter_y, ADAPTER_T, ADAPTER_H, color="#2457C5", fill="#DCE4F6")
-box(sx, FRONT_WALL + CLEAR, xiao_y, XIAO_T, XIAO_H, color="#2F8A4E", fill="#D6EEDD")
+xz = FRONT_WALL + CLEAR                     # front of the joints
+box(sx, xz, xiao_y + 4, JOINT, 4, color="#B26B00", fill="#F6E3B4")        # wire joints
+box(sx, xz + JOINT, xiao_y, XIAO_BODY_T, XIAO_H, color="#2F8A4E", fill="#D6EEDD")
+usb_y = xiao_y + (XIAO_H - USB_W) / 2
+usb_top = xz + JOINT + XIAO_T
+box(sx, xz + JOINT, usb_y, XIAO_T, USB_W, color="#2F8A4E", fill="#9FD3AF")
+box(sx, CASE_T - BACK_WALL, usb_y - 0.3, BACK_WALL + 0.02, USB_W + 0.6, color="#FFFFFF", fill="#FFFFFF", lw=0)  # notch
+sx.text(CASE_T + 1.5, usb_y + USB_W / 2, f"USB-C in a\nback notch\n({usb_top - CASE_T:+.1f} vs\nback face)", fontsize=7, color="#2F8A4E", va="center")
 sx.plot([FRONT_WALL + PANEL_T / 2, FRONT_WALL + PANEL_T / 2, behind + 0.2, behind + 0.2],
         [panel_y, panel_y - FOLD + 0.5, panel_y - FOLD + 0.5, fpc_top_behind], color="#B26B00", lw=1.5)
 for y in (CASE_H - 10, CHIN_H + 8):
@@ -110,11 +121,12 @@ sx.text(CASE_T + 1.5, panel_y + 40, "front\nwall\n|\npanel\n|\nbattery /\nadapte
 sx.set_title("Side section", fontsize=11)
 sx.set_xlim(-4, CASE_T + 12); sx.set_ylim(-12, CASE_H + 6); sx.set_aspect("equal"); sx.axis("off")
 
-fig.suptitle(f"Magnet layout v0: about {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f} mm (datasheet numbers, unmeasured)", fontsize=13)
+fig.suptitle(f"Magnet layout v1: about {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f} mm (datasheet numbers, unmeasured)", fontsize=13)
 fig.tight_layout()
-out = Path(__file__).with_name("layout_v0.png")
+out = Path(__file__).with_name("layout_v1.png")
 fig.savefig(out, dpi=110)
 print(f"case {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f}; chin {CHIN_H:.1f}; inner depth {inner_depth:.1f}")
+print(f"usb-c top {usb_top:.2f} vs back face {CASE_T:.2f}: {usb_top - CASE_T:+.2f} (negative = inside)")
 print(f"xiao x {xiao_x:.1f}..{xiao_x + XIAO_W:.1f} (inner wall at {CASE_W - CHIN_WALL:.1f}); usb face at {xiao_x + XIAO_W + USB_OVERHANG:.1f}")
 print(f"adapter y {adapter_y:.1f}..{adapter_y + ADAPTER_H:.1f}; battery y {batt_y:.1f}..{batt_y + BATT_H:.1f}; panel top {panel_y + PANEL_H:.1f}; case top {CASE_H:.1f}")
 print(f"wrote {out}")
