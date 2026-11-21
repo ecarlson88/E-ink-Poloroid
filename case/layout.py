@@ -34,9 +34,12 @@ CLEAR = 0.3                          # gap around each part
 FOLD = 2.0                           # room under the panel for the FPC's fold
 CHIN_WALL = 1.2
 FRONT_WALL, BACK_WALL = 1.0, 1.0
-MAGNET_D, MAGNET_T = 8.0, 1.0       # Erik may have thinner magnets: measure
+MAG_W, MAG_L, MAGNET_T = 3.0, 8.0, 1.0   # Erik: 8 x 3 x 1 bars, standing upright in the side strips
+MAG_PER_SIDE = 6
+MAG_GAP, BOSS_WALL = 0.2, 1.0
+SHELL_WALL, CORNER_R = 1.2, 4.0          # back shell side wall and outer corner radius (as in the CAD)
 MAGNET_SKIN, MAGNET_CAP = 0.4, 0.0   # Erik: pocket open on the inside, 0.4 skin on the fridge side, magnet glued in
-MAGNET_CLEAR = 1.0                   # keep each magnet's boss this far from any part
+MAGNET_CLEAR = 0.5                   # keep each magnet's boss this far from any part
 MASK = 0.5                           # the frame overlaps the active area by this much per side
 # XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
 # the back; the USB-C sits in a notch through the back shell, so only the board body sets the depth.
@@ -61,23 +64,32 @@ xiao_y = CHIN_WALL + CLEAR + (CHIN_H - FOLD - CHIN_WALL - 2 * CLEAR - XIAO_H) / 
 
 # Magnets sit in pockets in the back wall: each needs a boss MAGNET_SKIN + MAGNET_T + MAGNET_CAP
 # thick, so it pokes (that - BACK_WALL) into the cavity and must sit clear of every part behind it.
+# Bars stand upright against the side walls (the wall is one side of the pocket), from just above
+# the chin to just below the rounded top corners.
 boss = MAGNET_SKIN + MAGNET_T + MAGNET_CAP - BACK_WALL
-side_l = (panel_x + adapter_x) / 2                       # beside the adapter, left and right
-side_r = CASE_W - side_l
-MAGNETS = [(side_l, adapter_y + 6), (side_r, adapter_y + 6),
-           (side_l, adapter_y + ADAPTER_H - 6), (side_r, adapter_y + ADAPTER_H - 6)]
+boss_w = MAG_W + MAG_GAP + BOSS_WALL            # from the wall inward
+boss_l = MAG_L + MAG_GAP + 2 * BOSS_WALL
+mag_bottom = panel_y + 1.0
+mag_top = CASE_H - CORNER_R - 1.0
+pitch = (mag_top - mag_bottom - boss_l) / (MAG_PER_SIDE - 1)
+BOSSES = []                                        # (x, y, w, h) of each boss
+for i in range(MAG_PER_SIDE):
+    y = mag_bottom + i * pitch
+    BOSSES.append((SHELL_WALL, y, boss_w, boss_l))
+    BOSSES.append((CASE_W - SHELL_WALL - boss_w, y, boss_w, boss_l))
 parts = {"battery": (batt_x, batt_y, BATT_W, BATT_H), "adapter": (adapter_x, adapter_y, ADAPTER_W, ADAPTER_H),
          "xiao": (xiao_x, xiao_y, XIAO_W, XIAO_H)}
 
 
-def magnet_clashes(cx, cy):
-    rr = MAGNET_D / 2 + MAGNET_CLEAR
-    return [n for n, (x, y, w, h) in parts.items() if cx + rr > x and cx - rr < x + w and cy + rr > y and cy - rr < y + h]
+def clashes(bx, by, bw, bh):
+    m = MAGNET_CLEAR
+    return [n for n, (x, y, w, h) in parts.items() if bx + bw + m > x and bx - m < x + w and by + bh + m > y and by - m < y + h]
 
 
-for cx, cy in MAGNETS:
-    assert not magnet_clashes(cx, cy), (cx, cy, magnet_clashes(cx, cy))
-    assert inner_depth - PANEL_T - CLEAR >= boss, "no room behind the panel for a magnet boss"
+for b in BOSSES:
+    assert not clashes(*b), (b, clashes(*b))
+assert inner_depth - PANEL_T - CLEAR >= boss, "no room behind the panel for a magnet boss"
+min_gap_to_battery = batt_x - (SHELL_WALL + boss_w)
 
 fig, (ax, sx) = plt.subplots(1, 2, figsize=(13, 11), gridspec_kw={"width_ratios": [3, 1.1]})
 INK, MUTED = "#15171A", "#5C636E"
@@ -118,9 +130,11 @@ pin_x, pin_y = btn_x, btn_ys[0]
 ax.add_patch(Circle((pin_x, pin_y), PINHOLE_D / 2, color=INK))
 ax.annotate("rear pinhole over a XIAO button\n(R or B: check the real board)", (pin_x, pin_y), (24, 9.5), fontsize=7,
             color=INK, ha="center", arrowprops=dict(arrowstyle="-", color=INK, lw=0.8))
-for cx, cy in MAGNETS:
-    ax.add_patch(Circle((cx, cy), MAGNET_D / 2, fill=False, ls=":", color=MUTED, lw=1.3))
-ax.text(side_l, MAGNETS[0][1] - 5.5, "magnets glued\ninto back\npockets", ha="center", va="top", fontsize=6, color=MUTED)
+for bx, by, bw, bh in BOSSES:
+    left = bx < CASE_W / 2
+    mx = bx + (0 if left else BOSS_WALL) + MAG_GAP / 2
+    ax.add_patch(Rectangle((mx, by + BOSS_WALL + MAG_GAP / 2), MAG_W, MAG_L, fill=False, ls=":", color=MUTED, lw=1.3))
+ax.text(SHELL_WALL + 0.5, mag_bottom - 1.0, "12 x 8x3x1 bars\nin back pockets", fontsize=6, color=MUTED, va="top")
 ax.annotate("", (0, -6), (CASE_W, -6), arrowprops=dict(arrowstyle="<->", color=INK))
 ax.text(CASE_W / 2, -7, f"{CASE_W:.1f}", ha="center", va="top", fontsize=9)
 ax.annotate("", (-6, 0), (-6, CASE_H), arrowprops=dict(arrowstyle="<->", color=INK))
@@ -146,9 +160,9 @@ box(sx, CASE_T - BACK_WALL, usb_y - 0.3, BACK_WALL + 0.02, USB_W + 0.6, color="#
 sx.text(CASE_T + 1.5, usb_y + USB_W / 2, f"USB-C in a\nback notch\n({usb_top - CASE_T:+.1f} vs\nback face)", fontsize=7, color="#2F8A4E", va="center")
 sx.plot([FRONT_WALL + PANEL_T / 2, FRONT_WALL + PANEL_T / 2, behind + 0.2, behind + 0.2],
         [panel_y, panel_y - FOLD + 0.5, panel_y - FOLD + 0.5, fpc_top_behind], color="#B26B00", lw=1.5)
-for _, y in MAGNETS[:2] + MAGNETS[2:3]:   # one per height (the section is drawn through a magnet column)
-    box(sx, CASE_T - BACK_WALL - boss, y - MAGNET_D / 2 - 0.6, boss, MAGNET_D + 1.2, color=MUTED, fill="#EEF0F2")
-    box(sx, CASE_T - MAGNET_SKIN - MAGNET_T, y - MAGNET_D / 2, MAGNET_T, MAGNET_D, color=MUTED, fill="#9AA0A8")
+for _, y, _, bh in BOSSES[::2]:   # the section is drawn through one side's column of bars
+    box(sx, CASE_T - BACK_WALL - boss, y, boss, bh, color=MUTED, fill="#EEF0F2")
+    box(sx, CASE_T - MAGNET_SKIN - MAGNET_T, y + BOSS_WALL + MAG_GAP / 2, MAGNET_T, MAG_L, color=MUTED, fill="#9AA0A8")
 sx.annotate("", (0, -6), (CASE_T, -6), arrowprops=dict(arrowstyle="<->", color=INK))
 sx.text(CASE_T / 2, -7, f"{CASE_T:.1f}", ha="center", va="top", fontsize=9)
 sx.text(CASE_T + 1.5, panel_y + 40, "front\nwall\n|\npanel\n|\nbattery /\nadapter\n|\nback\nwall", fontsize=7, color=MUTED, va="center")
@@ -160,7 +174,7 @@ fig.tight_layout()
 out = Path(__file__).with_name("layout_v1.png")
 fig.savefig(out, dpi=110)
 print(f"case {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f}; chin {CHIN_H:.1f}; inner depth {inner_depth:.1f}")
-print(f"magnets at {[(round(x, 1), round(y, 1)) for x, y in MAGNETS]}; boss {boss:.1f} into the cavity, room {inner_depth - PANEL_T - CLEAR:.1f}")
+print(f"{len(BOSSES)} magnet bars, pitch {pitch:.1f}, rows y {mag_bottom:.1f}..{mag_top:.1f}; boss {boss:.1f} into the cavity; gap boss-to-battery {min_gap_to_battery:.1f}")
 pin_travel = CASE_T - (FRONT_WALL + CLEAR + JOINT + PCB_T + BTN_TOP)
 print(f"pinhole at x {pin_x:.1f}, y {pin_y:.1f} (or y {btn_ys[1]:.1f}); pin travels {pin_travel:.1f} from the back face to the button")
 print(f"usb-c top {usb_top:.2f} vs back face {CASE_T:.2f}: {usb_top - CASE_T:+.2f} (negative = inside)")

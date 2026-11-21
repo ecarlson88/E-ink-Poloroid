@@ -16,6 +16,8 @@ import json
 from pathlib import Path
 
 # name, expression, comment. Plain values are measured or chosen; the rest are derived.
+MAG_ROWS = 6  # magnet bars per side; changing it needs a rebuild from this script
+
 PARAMS = [
     # Parts (datasheets; measure and update)
     ("PanelW", "58 mm", "panel outline width"),
@@ -39,8 +41,9 @@ PARAMS = [
     ("UsbLen", "7.3 mm", "USB-C receptacle length including the overhang"),
     ("BtnFromEnd", "1.6 mm", "XIAO button centre from the USB-C end of the board"),
     ("BtnFromSide", "3 mm", "XIAO button centre from a long edge"),
-    ("MagD", "8 mm", "magnet diameter (Erik to measure)"),
-    ("MagT", "1 mm", "magnet thickness (Erik to measure)"),
+    ("MagW", "3 mm", "magnet bar width (Erik: 8 x 3 x 1 bars)"),
+    ("MagL", "8 mm", "magnet bar length (upright, along the side)"),
+    ("MagT", "1 mm", "magnet bar thickness"),
     # Case choices
     ("Clear", "0.3 mm", "gap around parts"),
     ("SideFrame", "3 mm", "frame width beside the panel"),
@@ -77,9 +80,11 @@ PARAMS = [
     ("PinX", "XiaoX + XiaoW - BtnFromEnd", "pinhole x (over a XIAO button)"),
     ("PinY", "XiaoY + BtnFromSide", "pinhole y (the lower button: check which is reset)"),
     ("AdapterY", "PanelY + FpcLen - Fold - 3 mm", "adapter bottom edge (folded cable end)"),
-    ("MagX", "PanelX + (PanelW - AdapterW) / 4", "magnet column x (beside the adapter)"),
-    ("MagY1", "AdapterY + 6 mm", "lower magnet row"),
-    ("MagY2", "AdapterY + AdapterH - 6 mm", "upper magnet row"),
+    ("BossW", "MagW + MagGap + BossWall", "magnet boss width from the side wall inward"),
+    ("BossL", "MagL + MagGap + 2 * BossWall", "magnet boss length"),
+    ("MagBottom", "PanelY + 1 mm", "bottom of the lowest magnet boss"),
+    ("MagTop", "CaseH - CornerR - 1 mm", "top of the highest magnet boss (below the rounded corner)"),
+    ("MagPitch", f"(MagTop - MagBottom - BossL) / {MAG_ROWS - 1}", "spacing between magnet rows"),
 ]
 
 cmds = []
@@ -115,19 +120,27 @@ rounded_rect("Wall", "Wall", "CaseW - Wall", "CaseH - Wall", "CornerR - Wall", 1
 c("sketch.finish")
 c("solid.extrude", distance="InnerD", direction="negative", operation="cut", targets=["BackShell"], name="Hollow")
 
-# Magnet bosses on the inside of the back wall, then pockets from the inside, leaving MagSkin.
-mags = [("MagX", "MagY1"), ("CaseW - MagX", "MagY1"), ("MagX", "MagY2"), ("CaseW - MagX", "MagY2")]
+# Magnet bars stand upright against each side wall: a boss on the inside of the back wall
+# (the side wall is its outer side) with a pocket open on the inside, leaving MagSkin.
+bosses, pockets = [], []
+for i in range(MAG_ROWS):
+    y0 = f"MagBottom + {i} * MagPitch"
+    # left side: the boss starts inside the side wall so it merges with it
+    bosses.append(("Wall - 0.5 mm", y0, "Wall + BossW", f"{y0} + BossL"))
+    pockets.append(("Wall", f"{y0} + BossWall", "Wall + MagW + MagGap", f"{y0} + BossWall + MagL + MagGap"))
+    # right side, mirrored
+    bosses.append(("CaseW - Wall - BossW", y0, "CaseW - Wall + 0.5 mm", f"{y0} + BossL"))
+    pockets.append(("CaseW - Wall - MagW - MagGap", f"{y0} + BossWall", "CaseW - Wall", f"{y0} + BossWall + MagL + MagGap"))
+
 c("sketch.create", plane="XY", offset="BackWall", name="MagnetBosses")
-for i, (mx, my) in enumerate(mags, start=1):
-    c("sketch.circle.center", center=[mx, my], diameter=10)
-    c("sketch.dimension", entities=[f"c{i}"], type="diameter", value="MagD + MagGap + 2 * BossWall")
+for b in bosses:
+    rect(*b)
 c("sketch.finish")
 c("solid.extrude", distance="MagSkin + MagT - BackWall", operation="join", targets=["BackShell"], name="Bosses")
 
 c("sketch.create", plane="XY", offset="MagSkin + MagT", name="MagnetPockets")
-for i, (mx, my) in enumerate(mags, start=1):
-    c("sketch.circle.center", center=[mx, my], diameter=8)
-    c("sketch.dimension", entities=[f"c{i}"], type="diameter", value="MagD + MagGap")
+for p in pockets:
+    rect(*p)
 c("sketch.finish")
 c("solid.extrude", distance="MagT", direction="negative", operation="cut", targets=["BackShell"], name="Pockets")
 

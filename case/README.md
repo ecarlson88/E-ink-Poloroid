@@ -32,15 +32,14 @@ About **64.6 x 110.8 x 6.8 mm**.
   model). A paperclip travels about 2.6 mm from the back face to the button; a short
   guide tube from the inside of the back wall would stop it slipping off. Which button
   (reset or boot) is still to be decided (`docs/ledger.md`).
-- **Magnets:** 4 x 8x1 discs **glued into pockets** in the back wall, open on the inside
-  (Erik). Each pocket leaves a 0.4 mm skin on the fridge side, so the wall is 1.4 mm
-  there and the magnet stands 0.4 mm proud inside. That sits beside the adapter, where
-  nothing is behind the panel, so the case stays 6.8 mm. Glue: cyanoacrylate or epoxy,
+- **Magnets:** 12 **8 x 3 x 1 bars** (Erik), six upright along each side wall from above
+  the chin to below the top corners. They are **glued into pockets** in the back wall,
+  open on the inside. Each pocket leaves a 0.4 mm skin on the fridge side and its pad
+  stands 0.4 mm proud inside, in the strip between the side wall and the battery or
+  adapter (1.9 mm clear of the battery), so the case stays 6.8 mm. Total magnet area is
+  288 mm², about 1.4x the four discs, and it reaches the top edge. Glue: cyanoacrylate or epoxy,
   not acetic-cure silicone, which the panel datasheet warns against.
-  They cannot go in the corners, because the battery fills the top behind the panel
-  and the chin holds the XIAO and the antenna (metal near the antenna detunes it).
-  - The top ~40 mm has no magnets: check it doesn't lean out from the door
-    (Task 7 Step 5).
+  None in the chin, which holds the XIAO and the antenna (metal near it detunes it).
   - Size the pockets about 0.2 mm over the magnet and fit them all with the same pole
     facing out.
   - Holding force through a 0.4 mm skin is a little lower than touching.

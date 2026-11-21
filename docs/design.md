@@ -36,7 +36,7 @@ Also rejected: Waveshare 15823 universal driver board (no charger, E6 support no
 | 3 | Seeed XIAO ESP32-S3 (plain, not the Sense variant) | Deep sleep about 14 uA, 110 mA battery charging (v1.4 schematic; the wiki says 50 mA), onboard USB-C, external U.FL rod antenna | Battery attaches to solder pads |
 | 4 | Thin LiPo, 3.7 V, 300 to 500 mAh (candidates: 303450, DNK 252548) | 303450: 500 mAh, 3.0 x 34 x 50 mm (Erik), protection circuit, max charge 0.5C (250 mA). DNK 252548: capacity, thickness and protection unconfirmed | Direct-soldered to the XIAO battery pads (JST cut off); check polarity against the XIAO silkscreen and insulate the joints. Erik ordered the 303450 |
 | 5 | Battery-sense divider: 2x 1 MOhm resistors plus small capacitor | Reads battery voltage on an ADC pin | No fuel gauge on this board |
-| 6 | Thin neodymium magnets (for example 4x 8x1 mm discs) | Back of case | Hold strength to be tested. Erik chose neodymium (a magnetic sheet was considered) |
+| 6 | Neodymium bars, 8 x 3 x 1 mm, 12 of them | Glued into pockets in the back wall, six along each side | Hold strength to be tested. Erik chose neodymium (a magnetic sheet and 8x1 discs were considered) |
 | 7 | Printed case (Erik prints) | White chin holds board and USB-C, battery behind panel | USB-C opening cut so the case wraps the connector face and leaves it exposed, which should save about 1.5 to 2 mm (Erik's estimate); overall thickness not measured |
 | 8 | Hookup wire, Kapton tape, double-sided adhesive | | |
 | 9 | MPU6050 breakout (for the optional shake feature, Task 8) | Motion interrupt pin | Breakout LED and regulator draw milliamps: remove them before measuring sleep current |
