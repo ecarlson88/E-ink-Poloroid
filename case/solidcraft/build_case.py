@@ -5,7 +5,8 @@ expressions of them, and sketches follow the parameters when they change.
 Layout and numbers: case/layout.py and docs/case-dimensions.md (datasheets, unmeasured).
 
 Build (from this folder, SolidCraft 0.22):
-    python3 build_case.py
+    python3 build_case.py            # magnet bars    -> magnet_case.json
+    python3 build_case.py discs      # 8 x 0.6 discs  -> magnet_case_discs.json
     solidcraft-cli run magnet_case.json --save magnet_case.solidcraft --out magnet_case.step
 
 Coordinates (mm): x to the right and y up as seen from the front, z from the back face
@@ -13,7 +14,14 @@ Coordinates (mm): x to the right and y up as seen from the front, z from the bac
 FrontFrame (the front plate with the window and a locating lip).
 """
 import json
+import sys
 from pathlib import Path
+
+# "bars": 12 x 8x3x1 bars upright along the side walls, on raised pads.
+# "discs": 6 x 8 mm discs, 0.6 thick (Erik's measured magnets), flush with the inside of the
+#          back wall (BackWall = MagSkin + MagT), so they can sit anywhere, even behind the battery.
+STYLE = sys.argv[1] if len(sys.argv) > 1 else "bars"
+assert STYLE in ("bars", "discs"), STYLE
 
 # name, expression, comment. Plain values are measured or chosen; the rest are derived.
 MAG_ROWS = 6  # magnet bars per side; changing it needs a rebuild from this script
@@ -106,6 +114,21 @@ def rect(x0, y0, x1, y1):
     c("sketch.line", points=[[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed=True)
 
 
+if STYLE == "discs":
+    drop = {"MagW", "MagL", "BossW", "BossL", "MagBottom", "MagTop", "MagPitch", "BossWall", "BackWall"}
+    PARAMS = [p for p in PARAMS if p[0] not in drop]
+    i = [n for n, _, _ in PARAMS].index("MagT")
+    PARAMS[i] = ("MagT", "0.6 mm", "magnet disc thickness (Erik measured 0.6)")
+    PARAMS.insert(i, ("MagD", "8 mm", "magnet disc diameter"))
+    i = [n for n, _, _ in PARAMS].index("MagGap") + 1
+    PARAMS.insert(i, ("BackWall", "MagSkin + MagT", "back wall thickness: exactly skin + magnet, so the pockets are flush inside"))
+    PARAMS += [
+        ("DiscInset", "Wall + 1 mm + MagD / 2", "disc centre from the outer side"),
+        ("DiscLowY", "PanelY + 1 mm + MagD / 2", "lower disc row (just above the chin)"),
+        ("DiscTopY", "CaseH - CornerR - 1 mm - MagD / 2", "upper disc row (below the rounded corners)"),
+        ("DiscMidY", "(DiscLowY + DiscTopY) / 2", "middle disc row"),
+    ]
+
 for name, expr, comment in PARAMS:
     c("parameters.add", name=name, expression=expr, comment=comment)
 
@@ -120,29 +143,40 @@ rounded_rect("Wall", "Wall", "CaseW - Wall", "CaseH - Wall", "CornerR - Wall", 1
 c("sketch.finish")
 c("solid.extrude", distance="InnerD", direction="negative", operation="cut", targets=["BackShell"], name="Hollow")
 
-# Magnet bars stand upright against each side wall: a boss on the inside of the back wall
-# (the side wall is its outer side) with a pocket open on the inside, leaving MagSkin.
-bosses, pockets = [], []
-for i in range(MAG_ROWS):
-    y0 = f"MagBottom + {i} * MagPitch"
-    # left side: the boss starts inside the side wall so it merges with it
-    bosses.append(("Wall - 0.5 mm", y0, "Wall + BossW", f"{y0} + BossL"))
-    pockets.append(("Wall", f"{y0} + BossWall", "Wall + MagW + MagGap", f"{y0} + BossWall + MagL + MagGap"))
-    # right side, mirrored
-    bosses.append(("CaseW - Wall - BossW", y0, "CaseW - Wall + 0.5 mm", f"{y0} + BossL"))
-    pockets.append(("CaseW - Wall - MagW - MagGap", f"{y0} + BossWall", "CaseW - Wall", f"{y0} + BossWall + MagL + MagGap"))
+if STYLE == "bars":
+    # Magnet bars stand upright against each side wall: a boss on the inside of the back wall
+    # (the side wall is its outer side) with a pocket open on the inside, leaving MagSkin.
+    bosses, pockets = [], []
+    for i in range(MAG_ROWS):
+        y0 = f"MagBottom + {i} * MagPitch"
+        # left side: the boss starts inside the side wall so it merges with it
+        bosses.append(("Wall - 0.5 mm", y0, "Wall + BossW", f"{y0} + BossL"))
+        pockets.append(("Wall", f"{y0} + BossWall", "Wall + MagW + MagGap", f"{y0} + BossWall + MagL + MagGap"))
+        # right side, mirrored
+        bosses.append(("CaseW - Wall - BossW", y0, "CaseW - Wall + 0.5 mm", f"{y0} + BossL"))
+        pockets.append(("CaseW - Wall - MagW - MagGap", f"{y0} + BossWall", "CaseW - Wall", f"{y0} + BossWall + MagL + MagGap"))
 
-c("sketch.create", plane="XY", offset="BackWall", name="MagnetBosses")
-for b in bosses:
-    rect(*b)
-c("sketch.finish")
-c("solid.extrude", distance="MagSkin + MagT - BackWall", operation="join", targets=["BackShell"], name="Bosses")
+    c("sketch.create", plane="XY", offset="BackWall", name="MagnetBosses")
+    for b in bosses:
+        rect(*b)
+    c("sketch.finish")
+    c("solid.extrude", distance="MagSkin + MagT - BackWall", operation="join", targets=["BackShell"], name="Bosses")
 
-c("sketch.create", plane="XY", offset="MagSkin + MagT", name="MagnetPockets")
-for p in pockets:
-    rect(*p)
-c("sketch.finish")
-c("solid.extrude", distance="MagT", direction="negative", operation="cut", targets=["BackShell"], name="Pockets")
+    c("sketch.create", plane="XY", offset="MagSkin + MagT", name="MagnetPockets")
+    for p in pockets:
+        rect(*p)
+    c("sketch.finish")
+    c("solid.extrude", distance="MagT", direction="negative", operation="cut", targets=["BackShell"], name="Pockets")
+
+else:
+    # Flush disc pockets from the inside of the back wall, leaving MagSkin.
+    discs = [(x, y) for y in ("DiscLowY", "DiscMidY", "DiscTopY") for x in ("DiscInset", "CaseW - DiscInset")]
+    c("sketch.create", plane="XY", offset="BackWall", name="MagnetPockets")
+    for i, (dx, dy) in enumerate(discs, start=1):
+        c("sketch.circle.center", center=[dx, dy], diameter=8)
+        c("sketch.dimension", entities=[f"c{i}"], type="diameter", value="MagD + MagGap")
+    c("sketch.finish")
+    c("solid.extrude", distance="MagT", direction="negative", operation="cut", targets=["BackShell"], name="Pockets")
 
 # Pinhole through the back wall, over one of the XIAO's buttons.
 c("sketch.create", plane="XY", name="Pinhole")
@@ -179,6 +213,6 @@ c("solid.extrude", distance="LipH", direction="negative", operation="join", targ
 
 c("inspect.measure")
 
-out = Path(__file__).with_name("magnet_case.json")
+out = Path(__file__).with_name("magnet_case.json" if STYLE == "bars" else "magnet_case_discs.json")
 out.write_text(json.dumps(cmds, indent=1) + "\n")
 print(f"wrote {out} ({len(cmds)} commands, {len(PARAMS)} parameters)")

@@ -4,14 +4,25 @@ A native, parametric SolidCraft design of layout v1 (`../layout_v1.png`), built 
 with SolidCraft 0.22.0's command-line tool. Unmeasured: every size comes from the
 datasheets (`docs/case-dimensions.md`).
 
+Two magnet options, same everything else:
+
+- **Bars** (`magnet_case.*`, `back_shell.stl`): 12 x 8x3x1 bars on raised pads along the side walls.
+- **Discs** (`magnet_case_discs.*`, `back_shell_discs.stl`): 6 of Erik's own 8 mm discs, measured
+  0.6 thick, in pockets flush with the inside of the back wall (`BackWall = MagSkin + MagT`),
+  so nothing stands proud inside and they sit at the top corners (behind the battery), at
+  mid-height and just above the chin. A thicker disc thickens the back wall to match: 0.8 mm
+  discs make the case 7.05.
+
+`front_frame.stl` is the same for both.
+
 | File | What |
 |---|---|
 | `magnet_case.solidcraft` | **Open this in SolidCraft.** Editable history: 17 sketches and features, 63 named parameters |
 | `magnet_case.step` | Both bodies, for Fusion or anything else (fixed solids, no history) |
 | `back_shell.stl`, `front_frame.stl` | Print files, one per part |
 | `magnet_case.json` | The SolidCraft script that builds the design |
-| `build_case.py` | Writes `magnet_case.json`; the parameter list with comments lives here |
-| `render_front.png`, `render_back.png`, `render_inside.png` | Renders from the SolidCraft CLI (inside: front frame hidden) |
+| `build_case.py` | Writes `magnet_case.json` (or `magnet_case_discs.json` with `discs`); the parameter list with comments lives here |
+| `render_front.png`, `render_back.png`, `render_inside.png`, `render_inside_discs.png` | Renders from the SolidCraft CLI (inside: front frame hidden) |
 
 ## Two parts
 
