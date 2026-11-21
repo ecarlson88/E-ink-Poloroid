@@ -128,6 +128,22 @@ static void test_remaining_sleep_seconds(void)
     CHECK(remaining_sleep_seconds(100000000, 100000000) == 0);
 }
 
+/* Task 5 (Erik): setup mode is a double press of the XIAO reset button through the rear
+ * pinhole. A reset press starts the chip like power-on; deep-sleep wakes never check. */
+static void test_boot_action(void)
+{
+    /* First power-on (or first press): arm the double-press window, then run normally. */
+    CHECK(boot_action(WAKE_POWER_ON, false) == BOOT_ARM_DOUBLE_PRESS);
+    /* A second press while the window's flag is still set: setup mode. */
+    CHECK(boot_action(WAKE_POWER_ON, true) == BOOT_SETUP);
+    /* The daily timer (and a shake) never look at the flag. */
+    CHECK(boot_action(WAKE_DEEP_SLEEP, false) == BOOT_NORMAL);
+    CHECK(boot_action(WAKE_DEEP_SLEEP, true) == BOOT_NORMAL);
+    /* Brownout, watchdog, panic: run normally, no setup. */
+    CHECK(boot_action(WAKE_OTHER, true) == BOOT_NORMAL);
+    CHECK(boot_action(WAKE_OTHER, false) == BOOT_NORMAL);
+}
+
 int main(void)
 {
     test_frame_ok();
@@ -138,6 +154,7 @@ int main(void)
     test_shake_is_deliberate();
     test_shake_allowed();
     test_remaining_sleep_seconds();
+    test_boot_action();
     if (failures) {
         printf("%d check(s) failed\n", failures);
         return 1;

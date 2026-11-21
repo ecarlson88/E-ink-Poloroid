@@ -42,6 +42,15 @@ bool shake_allowed(int shakes_today, uint32_t seconds_since_last, int cap, uint3
 /* Task 8: seconds until deadline_us, 0 if it has passed. */
 uint32_t remaining_sleep_seconds(uint64_t deadline_us, uint64_t now_us);
 
+/* Task 5 (Erik): a double press of the reset button (rear pinhole) opens setup mode.
+ * main reads the reset reason and an NVS flag, and acts on the result:
+ *   BOOT_ARM_DOUBLE_PRESS: set the flag, wait DOUBLE_PRESS_WINDOW_MS, clear it, run normally
+ *   BOOT_SETUP: clear the flag, run setup mode
+ *   BOOT_NORMAL: run normally (fetch, draw, sleep) */
+typedef enum { WAKE_POWER_ON, WAKE_DEEP_SLEEP, WAKE_OTHER } wake_kind_t;
+typedef enum { BOOT_NORMAL, BOOT_ARM_DOUBLE_PRESS, BOOT_SETUP } boot_action_t;
+boot_action_t boot_action(wake_kind_t wake, bool double_press_flag);
+
 #ifdef __cplusplus
 }
 #endif

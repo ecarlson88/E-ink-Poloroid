@@ -30,8 +30,9 @@ About **64.6 x 110.8 x 6.8 mm**.
   one of the XIAO's own buttons, which face the back because the board is upside down.
   They sit 1.6 mm in from the USB-C end and about 3.0 mm in from each long edge (STEP
   model). A paperclip travels about 2.6 mm from the back face to the button; a short
-  guide tube from the inside of the back wall would stop it slipping off. Which button
-  (reset or boot) is still to be decided (`docs/ledger.md`).
+  guide tube from the inside of the back wall would stop it slipping off. **Erik: the
+  reset button** (double press = setup mode). Check which of the two buttons is reset on
+  the real board; `PinY` in the CAD picks the lower one.
 - **Magnets:** 12 **8 x 3 x 1 bars** (Erik), six upright along each side wall from above
   the chin to below the top corners. They are **glued into pockets** in the back wall,
   open on the inside. Each pocket leaves a 0.4 mm skin on the fridge side and its pad
@@ -50,6 +51,19 @@ About **64.6 x 110.8 x 6.8 mm**.
 - **Depth:** 1.0 front wall + inner 4.8 + 1.0 back wall. Inside, the XIAO stack sets it:
   ~1.0 wire joints + 3.25 board and shield can (+0.6 clearance). The panel + battery
   side needs 4.0 (+0.6).
+
+## Assembly (Erik's choices)
+
+- **Front frame to back shell: glue.** The lip locates the frame and gives a glue
+  surface. Use cyanoacrylate or epoxy, not acetic-cure silicone near the panel. Glued
+  shut means opening it later (battery, repairs) breaks the case, so do the bench tests
+  first.
+- **Panel held against the frame: foam.** Behind the panel the gap is about 3.85 mm
+  (inner depth 4.8 minus the 1.0 panel). The battery and adapter already fill most of it.
+  Put soft foam pads, about 4-5 mm thick before squashing, in the open areas behind the
+  panel: beside the adapter (about 16 x 35 mm on each side, inside the magnet pads in
+  the bars version) and in the strip under the adapter beside the cable fold. Don't
+  press on the battery or the cable fold.
 
 ## Open before CAD
 

@@ -25,3 +25,8 @@
 #ifndef SETUP_AFTER_FAILURES
 #define SETUP_AFTER_FAILURES 3
 #endif
+
+/* Task 5 (Erik): a second press of the reset button within this time opens setup mode. */
+#ifndef DOUBLE_PRESS_WINDOW_MS
+#define DOUBLE_PRESS_WINDOW_MS 5000u
+#endif

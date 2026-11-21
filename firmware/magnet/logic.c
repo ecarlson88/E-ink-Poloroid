@@ -92,3 +92,9 @@ uint32_t remaining_sleep_seconds(uint64_t deadline_us, uint64_t now_us)
     /* Round up so the device never wakes before the daily deadline. */
     return (uint32_t)((deadline_us - now_us + 999999u) / 1000000u);
 }
+
+boot_action_t boot_action(wake_kind_t wake, bool double_press_flag)
+{
+    if (wake != WAKE_POWER_ON) return BOOT_NORMAL;
+    return double_press_flag ? BOOT_SETUP : BOOT_ARM_DOUBLE_PRESS;
+}
