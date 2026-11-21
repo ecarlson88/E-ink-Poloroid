@@ -25,7 +25,17 @@ About **64.6 x 110.8 x 6.8 mm**.
 - **Antenna** runs along the chin near the front, away from the steel door. Its size is
   still unknown.
 - **Setup button** on the bottom edge of the chin, on the left.
-- **Magnets:** 4 x 8x1 discs in the back wall corners.
+- **Magnets:** 4 x 8x1 discs **printed into the back wall** (Erik): pause the print, drop
+  them into pockets, print over them. Each sits under a 0.4 mm skin on the fridge side with
+  a 0.4 mm cap inside, so the wall is 1.8 mm there. That 0.8 mm boss pokes into the
+  case where nothing is behind the panel, beside the adapter, so the case stays 6.8 mm.
+  They cannot go in the corners, because the battery fills the top behind the panel
+  and the chin holds the XIAO and the antenna (metal near the antenna detunes it).
+  - The top ~40 mm has no magnets: check it doesn't lean out from the door
+    (Task 7 Step 5).
+  - Size the pockets about 0.2 mm over the magnet, all with the same pole facing out,
+    and check the print head clears them after the pause.
+  - Holding force through a 0.4 mm skin is a little lower than touching.
 - **Depth:** 1.0 front wall + inner 4.8 + 1.0 back wall. Inside, the XIAO stack sets it:
   ~1.0 wire joints + 3.25 board and shield can (+0.6 clearance). The panel + battery
   side needs 4.0 (+0.6).

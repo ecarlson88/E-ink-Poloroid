@@ -32,6 +32,8 @@ FOLD = 2.0                           # room under the panel for the FPC's fold
 CHIN_WALL = 1.2
 FRONT_WALL, BACK_WALL = 1.0, 1.0
 MAGNET_D, MAGNET_T = 8.0, 1.0
+MAGNET_SKIN, MAGNET_CAP = 0.4, 0.4   # printed over (Erik): skin on the fridge side, cap on the inside
+MAGNET_CLEAR = 1.0                   # keep each magnet's boss this far from any part
 MASK = 0.5                           # the frame overlaps the active area by this much per side
 # XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
 # the back; the USB-C sits in a notch through the back shell, so only the board body sets the depth.
@@ -53,6 +55,26 @@ batt_x = panel_x + (PANEL_W - BATT_W) / 2
 batt_y = adapter_y + ADAPTER_H + 1.5
 xiao_x = CASE_W - USB_OVERHANG - XIAO_W   # USB-C face flush with the outside of the right wall
 xiao_y = CHIN_WALL + CLEAR + (CHIN_H - FOLD - CHIN_WALL - 2 * CLEAR - XIAO_H) / 2
+
+# Magnets are printed into the back wall: each needs a boss MAGNET_SKIN + MAGNET_T + MAGNET_CAP
+# thick, so it pokes (that - BACK_WALL) into the cavity and must sit clear of every part behind it.
+boss = MAGNET_SKIN + MAGNET_T + MAGNET_CAP - BACK_WALL
+side_l = (panel_x + adapter_x) / 2                       # beside the adapter, left and right
+side_r = CASE_W - side_l
+MAGNETS = [(side_l, adapter_y + 6), (side_r, adapter_y + 6),
+           (side_l, adapter_y + ADAPTER_H - 6), (side_r, adapter_y + ADAPTER_H - 6)]
+parts = {"battery": (batt_x, batt_y, BATT_W, BATT_H), "adapter": (adapter_x, adapter_y, ADAPTER_W, ADAPTER_H),
+         "xiao": (xiao_x, xiao_y, XIAO_W, XIAO_H)}
+
+
+def magnet_clashes(cx, cy):
+    rr = MAGNET_D / 2 + MAGNET_CLEAR
+    return [n for n, (x, y, w, h) in parts.items() if cx + rr > x and cx - rr < x + w and cy + rr > y and cy - rr < y + h]
+
+
+for cx, cy in MAGNETS:
+    assert not magnet_clashes(cx, cy), (cx, cy, magnet_clashes(cx, cy))
+    assert inner_depth - PANEL_T - CLEAR >= boss, "no room behind the panel for a magnet boss"
 
 fig, (ax, sx) = plt.subplots(1, 2, figsize=(13, 11), gridspec_kw={"width_ratios": [3, 1.1]})
 INK, MUTED = "#15171A", "#5C636E"
@@ -85,9 +107,9 @@ ax.plot([xiao_x + 1.5, 8], [xiao_y + 2.5, 3.2], color="#7B3FA0", lw=2.2)
 ax.text(8, 4.6, "antenna (size TBD): along the chin, front side", fontsize=7, color="#7B3FA0")
 box(ax, 6, -0.01, 6, 1.2, color="#B26B00", fill="#B26B00")
 ax.text(9, -1.4, "setup button", ha="center", va="top", fontsize=7, color="#B26B00")
-for cx, cy in [(10, CASE_H - 10), (CASE_W - 10, CASE_H - 10), (10, CHIN_H + 8), (CASE_W - 10, CHIN_H + 8)]:
-    ax.add_patch(Circle((cx, cy), MAGNET_D / 2, fill=False, ls=":", color=MUTED))
-ax.text(10, CASE_H - 15.5, "magnets\n(back)", ha="center", va="top", fontsize=6, color=MUTED)
+for cx, cy in MAGNETS:
+    ax.add_patch(Circle((cx, cy), MAGNET_D / 2, fill=False, ls=":", color=MUTED, lw=1.3))
+ax.text(side_l, MAGNETS[0][1] - 5.5, "magnets\nprinted into\nthe back", ha="center", va="top", fontsize=6, color=MUTED)
 ax.annotate("", (0, -6), (CASE_W, -6), arrowprops=dict(arrowstyle="<->", color=INK))
 ax.text(CASE_W / 2, -7, f"{CASE_W:.1f}", ha="center", va="top", fontsize=9)
 ax.annotate("", (-6, 0), (-6, CASE_H), arrowprops=dict(arrowstyle="<->", color=INK))
@@ -113,8 +135,9 @@ box(sx, CASE_T - BACK_WALL, usb_y - 0.3, BACK_WALL + 0.02, USB_W + 0.6, color="#
 sx.text(CASE_T + 1.5, usb_y + USB_W / 2, f"USB-C in a\nback notch\n({usb_top - CASE_T:+.1f} vs\nback face)", fontsize=7, color="#2F8A4E", va="center")
 sx.plot([FRONT_WALL + PANEL_T / 2, FRONT_WALL + PANEL_T / 2, behind + 0.2, behind + 0.2],
         [panel_y, panel_y - FOLD + 0.5, panel_y - FOLD + 0.5, fpc_top_behind], color="#B26B00", lw=1.5)
-for y in (CASE_H - 10, CHIN_H + 8):
-    box(sx, CASE_T - BACK_WALL - MAGNET_T * 0.5, y - MAGNET_D / 2, MAGNET_T, MAGNET_D, color=MUTED, fill="#C9CDD3")
+for _, y in MAGNETS[:2] + MAGNETS[2:3]:   # one per height (the section is drawn through a magnet column)
+    box(sx, CASE_T - BACK_WALL - boss, y - MAGNET_D / 2 - 0.6, boss, MAGNET_D + 1.2, color=MUTED, fill="#EEF0F2")
+    box(sx, CASE_T - MAGNET_SKIN - MAGNET_T, y - MAGNET_D / 2, MAGNET_T, MAGNET_D, color=MUTED, fill="#9AA0A8")
 sx.annotate("", (0, -6), (CASE_T, -6), arrowprops=dict(arrowstyle="<->", color=INK))
 sx.text(CASE_T / 2, -7, f"{CASE_T:.1f}", ha="center", va="top", fontsize=9)
 sx.text(CASE_T + 1.5, panel_y + 40, "front\nwall\n|\npanel\n|\nbattery /\nadapter\n|\nback\nwall", fontsize=7, color=MUTED, va="center")
@@ -126,6 +149,7 @@ fig.tight_layout()
 out = Path(__file__).with_name("layout_v1.png")
 fig.savefig(out, dpi=110)
 print(f"case {CASE_W:.1f} x {CASE_H:.1f} x {CASE_T:.1f}; chin {CHIN_H:.1f}; inner depth {inner_depth:.1f}")
+print(f"magnets at {[(round(x, 1), round(y, 1)) for x, y in MAGNETS]}; boss {boss:.1f} into the cavity, room {inner_depth - PANEL_T - CLEAR:.1f}")
 print(f"usb-c top {usb_top:.2f} vs back face {CASE_T:.2f}: {usb_top - CASE_T:+.2f} (negative = inside)")
 print(f"xiao x {xiao_x:.1f}..{xiao_x + XIAO_W:.1f} (inner wall at {CASE_W - CHIN_WALL:.1f}); usb face at {xiao_x + XIAO_W + USB_OVERHANG:.1f}")
 print(f"adapter y {adapter_y:.1f}..{adapter_y + ADAPTER_H:.1f}; battery y {batt_y:.1f}..{batt_y + BATT_H:.1f}; panel top {panel_y + PANEL_H:.1f}; case top {CASE_H:.1f}")
