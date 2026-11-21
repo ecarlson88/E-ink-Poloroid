@@ -69,6 +69,10 @@ PARAMS = [
     ("BossWall", "1 mm", "wall around a magnet pocket"),
     ("RibT", "1.2 mm", "cross rib thickness (under the panel's bottom edge)"),
     ("RibGap", "30 mm", "centre gap in the cross ribs for the panel cable and wires"),
+    ("FrontR", "0.45 mm", "fillet on the front face's outer edge (SolidCraft 0.22 allows up to ~0.5 on this 1 mm frame)"),
+    ("BackR", "0.8 mm", "fillet on the back face's outer edge"),
+    ("SeamR", "0.3 mm", "fillet on both edges of the frame/shell seam (a small glue-hiding groove)"),
+    ("WinChamfer", "0.6 mm", "45 degree chamfer around the window on the front face"),
     ("LipW", "0.8 mm", "front frame locating lip width"),
     ("LipH", "0.6 mm", "front frame locating lip height"),
     ("LipGap", "0.15 mm", "lip clearance to the shell wall"),
@@ -223,6 +227,45 @@ rounded_rect("Wall + LipGap + LipW", "Wall + LipGap + LipW", "CaseW - Wall - Lip
              "CornerR - Wall - LipGap - LipW", 5)
 c("sketch.finish")
 c("solid.extrude", distance="LipH", direction="negative", operation="join", targets=["FrontFrame"], name="LipRing")
+
+# --- Edge finishing ------------------------------------------------------------------------
+# SolidCraft picks an edge by a point on it (plain numbers) and then keeps it by geometry, so
+# these points come from the default parameter values and the fillets follow later changes.
+# Each rounded outline is listed edge by edge: four straight edges and four corner arcs.
+import math
+
+
+def values():
+    env = {"max": max, "min": min}
+    for name, expr, _ in PARAMS:
+        env[name] = eval(expr.replace(" mm", "").replace("mm", ""), {}, env)
+    return env
+
+
+v = values()
+W, H, R = v["CaseW"], v["CaseH"], v["CornerR"]
+k = R * (1 - 1 / math.sqrt(2))                     # 45 degree point on a corner arc
+notch_lo = v["UsbCY"] - v["UsbW"] / 2 - v["Clear"]
+
+
+def outline(z, right_split=False):
+    pts = [[W / 2, 0, z], [W / 2, H, z], [0, H / 2, z],
+           [k, k, z], [W - k, k, z], [W - k, H - k, z], [k, H - k, z]]
+    if right_split:   # the USB-C notch splits the right edge in two
+        pts += [[W, (R + notch_lo) / 2, z], [W, H / 2, z]]
+    else:
+        pts += [[W, H / 2, z]]
+    return pts
+
+
+top = v["ShellH"] + v["FrontWall"]
+c("solid.fillet", edges=outline(top), radius="FrontR", body="FrontFrame", name="FrontEdgeFillet")
+c("solid.fillet", edges=outline(v["ShellH"]), radius="SeamR", body="FrontFrame", name="FrameSeamFillet")
+c("solid.fillet", edges=outline(v["ShellH"], right_split=True), radius="SeamR", body="BackShell", name="ShellSeamFillet")
+c("solid.fillet", edges=outline(0, right_split=True), radius="BackR", body="BackShell", name="BackEdgeFillet")
+wx, wy, ww, wh = v["WinX"], v["WinY"], v["WinW"], v["WinH"]
+c("solid.chamfer", edges=[[wx + ww / 2, wy, top], [wx + ww / 2, wy + wh, top], [wx, wy + wh / 2, top], [wx + ww, wy + wh / 2, top]],
+  distance="WinChamfer", body="FrontFrame", name="WindowChamfer")
 
 c("inspect.measure")
 

@@ -22,7 +22,7 @@ Two magnet options, same everything else:
 | `back_shell.stl`, `front_frame.stl` | Print files, one per part |
 | `magnet_case.json` | The SolidCraft script that builds the design |
 | `build_case.py` | Writes `magnet_case.json` (or `magnet_case_discs.json` with `discs`); the parameter list with comments lives here |
-| `render_front.png`, `render_back.png`, `render_inside.png`, `render_inside_discs.png` | Renders from the SolidCraft CLI (inside: front frame hidden) |
+| `render_front.png`, `render_back.png`, `render_inside.png`, `render_inside_discs.png`, `render_detail.png` | Renders from the SolidCraft CLI (inside: front frame hidden; detail: window chamfer and edge fillets) |
 
 ## Two parts
 
@@ -39,6 +39,15 @@ Two magnet options, same everything else:
     frame's lip at each end.
 - **FrontFrame**: a 1.0 mm plate with the window (active area minus 0.5 mm per side) and a
   0.6 mm locating lip that drops inside the shell walls with 0.15 mm clearance.
+- **Edge finishing** (`render_detail.png`):
+  - 0.45 mm fillet on the front face's outer edge (`FrontR`). SolidCraft 0.22 refuses more
+    than ~0.5 on the 1 mm frame ("not supported yet").
+  - 0.8 mm fillet on the back face's outer edge (`BackR`).
+  - 0.3 mm on both edges of the frame/shell seam (`SeamR`), leaving a small groove that
+    hides the glue line.
+  - A 0.6 mm x 45 degree chamfer around the window on the front face only (`WinChamfer`),
+    so the panel side of the window, and the masking, are unchanged.
+  - The USB-C notch and pinhole edges are left sharp.
 
 Overall 64.6 x 110.8 x 6.85.
 
@@ -78,6 +87,13 @@ Rebuild from the script (after editing `build_case.py`):
   was built, rebuilt with changed parameters, exported and rendered by `solidcraft-cli`.
 
 ## What SolidCraft 0.22 was like for this
+
+- **Edges are picked by a point** (plain numbers, no expressions), then **kept by
+  geometry.** The fillets and chamfer survived parameter changes that moved their edges:
+  XiaoBodyT, SideFrame, CornerR and the active area changed together, every feature
+  rebuilt, the face counts were unchanged and there were no interferences.
+- **`tangent_chain` was silently ignored** on fillets, so each rounded outline is listed
+  edge by edge (4 lines + 4 arcs, computed in `build_case.py`).
 
 - **Scripting works well.** `solidcraft-cli commands` documents every command's parameters,
   and its error messages point at the exact step and field.

@@ -306,6 +306,38 @@
  {
   "command": "parameters.add",
   "params": {
+   "name": "FrontR",
+   "expression": "0.45 mm",
+   "comment": "fillet on the front face's outer edge (SolidCraft 0.22 allows up to ~0.5 on this 1 mm frame)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BackR",
+   "expression": "0.8 mm",
+   "comment": "fillet on the back face's outer edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SeamR",
+   "expression": "0.3 mm",
+   "comment": "fillet on both edges of the frame/shell seam (a small glue-hiding groove)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "WinChamfer",
+   "expression": "0.6 mm",
+   "comment": "45 degree chamfer around the window on the front face"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
    "name": "LipW",
    "expression": "0.8 mm",
    "comment": "front frame locating lip width"
@@ -1120,6 +1152,246 @@
     "FrontFrame"
    ],
    "name": "LipRing"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     32.3,
+     0,
+     6.85
+    ],
+    [
+     32.3,
+     110.84,
+     6.85
+    ],
+    [
+     0,
+     55.42,
+     6.85
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     6.85
+    ],
+    [
+     63.428427124746186,
+     1.1715728752538102,
+     6.85
+    ],
+    [
+     63.428427124746186,
+     109.66842712474619,
+     6.85
+    ],
+    [
+     1.1715728752538102,
+     109.66842712474619,
+     6.85
+    ],
+    [
+     64.6,
+     55.42,
+     6.85
+    ]
+   ],
+   "radius": "FrontR",
+   "body": "FrontFrame",
+   "name": "FrontEdgeFillet"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     32.3,
+     0,
+     5.85
+    ],
+    [
+     32.3,
+     110.84,
+     5.85
+    ],
+    [
+     0,
+     55.42,
+     5.85
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     5.85
+    ],
+    [
+     63.428427124746186,
+     1.1715728752538102,
+     5.85
+    ],
+    [
+     63.428427124746186,
+     109.66842712474619,
+     5.85
+    ],
+    [
+     1.1715728752538102,
+     109.66842712474619,
+     5.85
+    ],
+    [
+     64.6,
+     55.42,
+     5.85
+    ]
+   ],
+   "radius": "SeamR",
+   "body": "FrontFrame",
+   "name": "FrameSeamFillet"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     32.3,
+     0,
+     5.85
+    ],
+    [
+     32.3,
+     110.84,
+     5.85
+    ],
+    [
+     0,
+     55.42,
+     5.85
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     5.85
+    ],
+    [
+     63.428427124746186,
+     1.1715728752538102,
+     5.85
+    ],
+    [
+     63.428427124746186,
+     109.66842712474619,
+     5.85
+    ],
+    [
+     1.1715728752538102,
+     109.66842712474619,
+     5.85
+    ],
+    [
+     64.6,
+     4.825,
+     5.85
+    ],
+    [
+     64.6,
+     55.42,
+     5.85
+    ]
+   ],
+   "radius": "SeamR",
+   "body": "BackShell",
+   "name": "ShellSeamFillet"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     32.3,
+     0,
+     0
+    ],
+    [
+     32.3,
+     110.84,
+     0
+    ],
+    [
+     0,
+     55.42,
+     0
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     0
+    ],
+    [
+     63.428427124746186,
+     1.1715728752538102,
+     0
+    ],
+    [
+     63.428427124746186,
+     109.66842712474619,
+     0
+    ],
+    [
+     1.1715728752538102,
+     109.66842712474619,
+     0
+    ],
+    [
+     64.6,
+     4.825,
+     0
+    ],
+    [
+     64.6,
+     55.42,
+     0
+    ]
+   ],
+   "radius": "BackR",
+   "body": "BackShell",
+   "name": "BackEdgeFillet"
+  }
+ },
+ {
+  "command": "solid.chamfer",
+  "params": {
+   "edges": [
+    [
+     32.3,
+     28.450000000000003,
+     6.85
+    ],
+    [
+     32.3,
+     104.49000000000001,
+     6.85
+    ],
+    [
+     7.0,
+     66.47,
+     6.85
+    ],
+    [
+     57.6,
+     66.47,
+     6.85
+    ]
+   ],
+   "distance": "WinChamfer",
+   "body": "FrontFrame",
+   "name": "WindowChamfer"
   }
  },
  {
