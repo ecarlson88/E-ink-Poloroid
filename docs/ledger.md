@@ -21,3 +21,7 @@ Task 8: Ruling: a sample above threshold at index 0 counts as a rising crossing 
 Task 8: Ruling: remaining_sleep_seconds rounds up to whole seconds so the device never wakes before the daily deadline — wakes up to 1 s late — none
 Task 8: Steps 1-2 complete (shake_is_deliberate, shake_allowed, remaining_sleep_seconds)
 Firmware logic tests: gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/magnet/logic.c → all logic tests passed (also with -DHIGH_NIBBLE_IS_LEFT=0 -DFAIL_RETRY_SECONDS=30)
+Task 3 follow-up (Erik): keep originals. Uploads are stored as-is under DATA_DIR/originals/<id> next to the frame. Ruling: frames are re-rendered automatically at server start when imaging.render_key() (palette, nibble order, size, RENDER_VERSION) differs from the key stored in the state row — no manual step after palette tuning or a nibble flip; restart the container — costs a few seconds per photo at that one start
+Ruling: the photo row is committed only after both files are written (atomic tmp+rename), fixing an orphan row on a failed write — none
+Ruling: no SQLite migration for the new state.render_key column, because the server has never been deployed — a database from before this change would fail at start; delete it (it holds only test data)
+Task 3 follow-up: tests: pytest → 20 passed

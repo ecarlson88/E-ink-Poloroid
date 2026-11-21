@@ -1,5 +1,7 @@
 """Turn any photo into the 480x720, 4-bit-per-pixel frame the panel takes."""
+import hashlib
 import io
+import json
 import warnings
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -21,6 +23,21 @@ PALETTE: dict[int, tuple[int, int, int]] = {
 HIGH_NIBBLE_IS_LEFT = True
 
 _NIBBLES = sorted(PALETTE)  # palette index i -> nibble _NIBBLES[i]
+
+# Bump when render_frame changes in a way PALETTE and HIGH_NIBBLE_IS_LEFT do
+# not capture (for example a new dither), so stored frames get re-rendered.
+RENDER_VERSION = 1
+
+
+def render_key() -> str:
+    """Fingerprint of everything that decides a frame's bytes."""
+    settings = {
+        "version": RENDER_VERSION,
+        "size": [WIDTH, HEIGHT],
+        "palette": {str(k): list(v) for k, v in sorted(PALETTE.items())},
+        "high_nibble_is_left": bool(HIGH_NIBBLE_IS_LEFT),
+    }
+    return hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
 
 
 def _palette_image() -> Image.Image:

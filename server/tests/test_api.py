@@ -122,3 +122,52 @@ def test_index_page_served(client):
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
+
+
+def _stripes() -> bytes:
+    """A 480x720 PNG of 1-px vertical black/white stripes: its frame changes
+    if the nibble order flips."""
+    img = Image.new("RGB", (480, 720), (255, 255, 255))
+    for x in range(0, 480, 2):
+        for y in range(720):
+            img.putpixel((x, y), (0, 0, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_upload_keeps_original(logged_in, tmp_path):
+    data = _photo((0, 0, 255))
+    pid = logged_in.post("/api/photos", files={"file": ("p.jpg", data, "image/jpeg")}).json()["id"]
+    assert (tmp_path / "originals" / str(pid)).read_bytes() == data
+
+
+def test_delete_removes_original(logged_in, tmp_path):
+    pid = _upload(logged_in).json()["id"]
+    assert (tmp_path / "originals" / str(pid)).exists()
+    logged_in.delete(f"/api/photos/{pid}")
+    assert not (tmp_path / "originals" / str(pid)).exists()
+    assert not (tmp_path / "frames" / f"{pid}.bin").exists()
+
+
+def test_frames_rerendered_when_render_settings_change(logged_in, tmp_path, monkeypatch):
+    import imaging
+
+    logged_in.post("/api/photos", files={"file": ("s.png", _stripes(), "image/png")})
+    before = _next(logged_in).content
+
+    monkeypatch.setattr(imaging, "HIGH_NIBBLE_IS_LEFT", not imaging.HIGH_NIBBLE_IS_LEFT)
+    with TestClient(create_app(), base_url="https://testserver") as c2:  # restart
+        after = _next(c2).content
+
+    assert after != before
+    assert after == imaging.render_frame(_stripes())
+
+
+def test_frames_not_rerendered_when_settings_unchanged(logged_in, tmp_path):
+    pid = _upload(logged_in).json()["id"]
+    frame = tmp_path / "frames" / f"{pid}.bin"
+    frame.write_bytes(b"\x11" * FRAME_BYTES)  # marker: would be overwritten by a re-render
+    with TestClient(create_app(), base_url="https://testserver"):
+        pass
+    assert frame.read_bytes() == b"\x11" * FRAME_BYTES

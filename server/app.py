@@ -1,6 +1,7 @@
 """Magnet server: Erik uploads photos, the device fetches ready frames."""
 import hashlib
 import hmac
+import logging
 import os
 import sqlite3
 import time
@@ -11,6 +12,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.middleware.sessions import SessionMiddleware
 
+import imaging
 import notify
 from imaging import render_frame
 
@@ -18,6 +20,7 @@ MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 LOW_BATTERY_MV = 3500
 FRAME_BYTES = 172_800
 STATIC_DIR = Path(__file__).parent / "static"
+log = logging.getLogger(__name__)
 
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
@@ -37,12 +40,20 @@ def _verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(digest.hex(), digest_hex)
 
 
+def _write_atomic(path: Path, data: bytes) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_bytes(data)
+    tmp.replace(path)
+
+
 def create_app() -> FastAPI:
     device_token = os.environ["DEVICE_TOKEN"]
     password_hash = os.environ["UPLOAD_PASSWORD_HASH"]
     data_dir = Path(os.environ.get("DATA_DIR", "data"))
     frames_dir = data_dir / "frames"
+    originals_dir = data_dir / "originals"
     frames_dir.mkdir(parents=True, exist_ok=True)
+    originals_dir.mkdir(parents=True, exist_ok=True)
     db_path = data_dir / "magnet.db"
 
     @contextmanager
@@ -68,11 +79,14 @@ def create_app() -> FastAPI:
                 last_seen REAL,
                 battery_mv INTEGER,
                 low_streak INTEGER NOT NULL DEFAULT 0,
-                alerted INTEGER NOT NULL DEFAULT 0
+                alerted INTEGER NOT NULL DEFAULT 0,
+                render_key TEXT
             );
             INSERT OR IGNORE INTO state (id) VALUES (1);
             """
         )
+
+    rerender_if_settings_changed(db, frames_dir, originals_dir)
 
     app = FastAPI()
     app.add_middleware(
@@ -113,10 +127,17 @@ def create_app() -> FastAPI:
             frame = render_frame(data)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=f"unsupported image: {exc}")
-        with db() as conn:
+        with db() as conn:  # the row is committed only if both files were written
             cur = conn.execute("INSERT INTO photos (created_at) VALUES (?)", (time.time(),))
             photo_id = cur.lastrowid
-        (frames_dir / f"{photo_id}.bin").write_bytes(frame)
+            original, frame_path = originals_dir / str(photo_id), frames_dir / f"{photo_id}.bin"
+            try:
+                _write_atomic(original, data)
+                _write_atomic(frame_path, frame)
+            except OSError:
+                original.unlink(missing_ok=True)
+                frame_path.unlink(missing_ok=True)
+                raise
         return {"id": photo_id}
 
     @app.get("/api/photos", dependencies=[Depends(require_login)])
@@ -130,6 +151,7 @@ def create_app() -> FastAPI:
         with db() as conn:
             conn.execute("DELETE FROM photos WHERE id = ?", (photo_id,))
         (frames_dir / f"{photo_id}.bin").unlink(missing_ok=True)
+        (originals_dir / str(photo_id)).unlink(missing_ok=True)
         return {"ok": True}
 
     def record_battery(conn: sqlite3.Connection, bat_mv: int) -> int | None:
@@ -171,3 +193,28 @@ def create_app() -> FastAPI:
                         headers={"X-Photo-Id": str(row["id"])})
 
     return app
+
+
+def rerender_if_settings_changed(db, frames_dir: Path, originals_dir: Path) -> None:
+    """Re-render every stored frame from its original when the palette, nibble
+    order or render version changed since the frames were made."""
+    key = imaging.render_key()
+    with db() as conn:
+        stored = conn.execute("SELECT render_key FROM state WHERE id = 1").fetchone()["render_key"]
+        if stored == key:
+            return
+        ids = [r["id"] for r in conn.execute("SELECT id FROM photos ORDER BY id")]
+    for photo_id in ids:
+        original = originals_dir / str(photo_id)
+        if not original.exists():
+            log.warning("photo %s has no original; keeping its old frame", photo_id)
+            continue
+        try:
+            frame = render_frame(original.read_bytes())
+        except ValueError:
+            log.exception("photo %s could not be re-rendered; keeping its old frame", photo_id)
+            continue
+        _write_atomic(frames_dir / f"{photo_id}.bin", frame)
+    log.info("re-rendered %d photo(s) for new render settings", len(ids))
+    with db() as conn:
+        conn.execute("UPDATE state SET render_key = ? WHERE id = 1", (key,))
