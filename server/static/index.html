@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fridge magnet photos</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+  li { margin: .4rem 0; }
+  button { margin-left: .5rem; }
+  #msg { color: #a00; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<h1>Fridge magnet photos</h1>
+<p id="msg"></p>
+<form id="login">
+  <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+  <button>Log in</button>
+</form>
+<div id="app" hidden>
+  <form id="upload">
+    <input type="file" name="file" accept="image/*" required>
+    <button>Upload</button>
+  </form>
+  <ul id="list"></ul>
+</div>
+<script>
+const msg = document.getElementById("msg");
+const show = (ok) => {
+  document.getElementById("login").hidden = ok;
+  document.getElementById("app").hidden = !ok;
+};
+async function refresh() {
+  const r = await fetch("/api/photos");
+  if (r.status === 401) { show(false); return; }
+  show(true);
+  const list = document.getElementById("list");
+  list.replaceChildren();
+  for (const p of await r.json()) {
+    const li = document.createElement("li");
+    li.textContent = "Photo " + p.id + " (" + new Date(p.created_at * 1000).toLocaleString() + ")";
+    const del = document.createElement("button");
+    del.textContent = "Delete";
+    del.onclick = async () => { await fetch("/api/photos/" + p.id, { method: "DELETE" }); refresh(); };
+    li.append(del);
+    list.append(li);
+  }
+}
+document.getElementById("login").onsubmit = async (e) => {
+  e.preventDefault();
+  const r = await fetch("/login", { method: "POST", body: new FormData(e.target) });
+  msg.textContent = r.ok ? "" : "Wrong password";
+  if (r.ok) refresh();
+};
+document.getElementById("upload").onsubmit = async (e) => {
+  e.preventDefault();
+  const r = await fetch("/api/photos", { method: "POST", body: new FormData(e.target) });
+  msg.textContent = r.ok ? "" : (await r.json()).detail;
+  if (r.ok) { e.target.reset(); refresh(); }
+};
+refresh();
+</script>
+</body>
+</html>
