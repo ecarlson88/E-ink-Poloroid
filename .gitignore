@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 firmware/magnet/secrets.h
 .env
+data/

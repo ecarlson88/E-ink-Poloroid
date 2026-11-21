@@ -1,0 +1,14 @@
+# The magnet server. Secrets come from .env (git-ignored; copy .env.example).
+# HTTPS is handled by a reverse proxy in front of it, see server/README.md.
+services:
+  magnet:
+    build: ./server
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - magnet-data:/data      # photos, frames and the database; see server/README.md for backups
+    ports:
+      - "127.0.0.1:8000:8000"   # only reachable from this machine; the proxy forwards to it
+
+volumes:
+  magnet-data:

@@ -25,3 +25,6 @@ Task 3 follow-up (Erik): keep originals. Uploads are stored as-is under DATA_DIR
 Ruling: the photo row is committed only after both files are written (atomic tmp+rename), fixing an orphan row on a failed write — none
 Ruling: no SQLite migration for the new state.render_key column, because the server has never been deployed — a database from before this change would fail at start; delete it (it holds only test data)
 Task 3 follow-up: tests: pytest → 20 passed
+Task 3 Step 5 (Erik: deploy with Docker): server/Dockerfile (python:3.13-slim, non-root uid 10001, healthcheck on /) and root docker-compose.yml (env from git-ignored .env, template .env.example; port bound to 127.0.0.1:8000 for a proxy on the same host). Verified here with docker compose: 401 without/with wrong token, 204 empty, login with a $$-escaped hash in .env, upload, 200 with 172,800 bytes, data kept across restart, healthy. HTTPS proxy part waits on Erik's Cloudflare/Caddy answer
+Ruling: data in a named Docker volume (magnet-data), not a ./data bind mount — the bind mount failed here (folder created root-owned, container runs non-root) — backups need `docker compose cp` instead of copying a folder
+Ruling: Python dependencies are not version-pinned in the image (same as pyproject.toml) — a future breaking FastAPI/Pillow release could break a rebuild; pin with a lock file if that happens
