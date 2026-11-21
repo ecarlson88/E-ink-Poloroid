@@ -66,3 +66,21 @@ Pouch cells usually carry their protection board and the lead exit on one short 
 3. **Chin below the panel:** the panel's wider bottom margin, the FPC exit and the chin all fall at the same edge. The FPC folds back behind the panel, so the adapter sits behind the bottom part of the panel or inside the chin.
 4. **USB-C** must face an outside edge of the chin (the plan says the case wraps the connector face). Reset and boot buttons sit right beside it.
 5. **Button for setup mode** (plan: D5) is a separate part not yet chosen.
+
+## Stand-in for test fits: XIAO nRF52840 (Erik's, from a Meshtastic build)
+
+Compared with Seeed's XIAO nRF52840 **Sense** 3D model (`seeed-studio-xiao-nrf52840-3d-model.zip`
+on the Seeed wiki; Seeed publishes none for the plain board, which differs only by two small sensors):
+
+| | XIAO ESP32-S3 | XIAO nRF52840 (Sense model) |
+|---|---|---|
+| Board, total height | 20.96 x 17.78, 4.46 | identical |
+| Without the USB-C | 3.25 (PCB + shield can) | 3.25 (PCB + module) |
+| USB-C size and position | 7.3 x 8.9 x 4.2, 1.5 overhang | identical |
+| Buttons | R and B, either side of the USB-C, 1.6 from the end | reset only, within ~0.3 mm of one of the S3 button spots |
+| Antenna | external rod on U.FL | onboard |
+
+A test fit with it checks the chin footprint, case depth, the USB-C notch and the cable plug.
+If its reset button lines up with the pinhole, the pinhole is probably on the S3's reset side too
+(assuming Seeed keeps reset in the same place across XIAO boards; not confirmed). If not, set
+`PinY` to `XiaoY + XiaoH - BtnFromSide`. Remove any stacked LoRa board before fitting.
