@@ -13,7 +13,7 @@ Erik is building a thin color e-ink photo fridge magnet as a gift for his parent
 ## Current state
 - `server/` is built and tested (16 tests). Run them from `server/`: `pip install fastapi uvicorn pillow httpx python-multipart itsdangerous pytest` then `pytest`.
 - Not done: Task 3 Step 5 (deploy behind HTTPS; needs Erik's host), and everything that needs hardware: Task 1 (bench bring-up) and Tasks 4 to 8 (firmware, setup mode, battery, case, shake). Erik has ordered the parts: XIAO ESP32-S3, GDEH037E01 panel with its DESPI-E01 adapter, a 303450 battery and an MPU6050.
-- Firmware directories (`firmware/main`, `firmware/test`, `firmware/bench`) do not exist yet. The pure-logic parts (`logic.c`) are meant to be tested on the PC with plain `gcc`.
+- Firmware: `firmware/main/logic.c`/`logic.h` (Task 4 Steps 1 to 3) is built and tested on the PC: from the repo root, `gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/main/logic.c -o /tmp/t && /tmp/t`. `firmware/bench` and the ESP-IDF parts of `firmware/main` do not exist yet.
 
 ## Rules
 - Follow the plan's interfaces and names exactly. Where the plan is wrong or silent, decide, and record a `Ruling:` line in `docs/ledger.md` with what it costs if wrong.

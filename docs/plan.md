@@ -10,7 +10,7 @@
 
 **Spec:** `docs/design.md`.
 
-**Status:** Tasks 2 and 3 are built in `server/` (Task 3 Step 5, the HTTPS deploy check, is pending). Tasks 1 and 4 to 8 need the hardware, which Erik has ordered. See `docs/ledger.md`.
+**Status:** Tasks 2 and 3 are built in `server/` (Task 3 Step 5, the HTTPS deploy check, is pending). Task 4 Steps 1 to 3 (`logic.c` host tests) are done. Tasks 1 and 4 to 8 need the hardware, which Erik has ordered. See `docs/ledger.md`.
 
 ## Global constraints
 
@@ -94,9 +94,9 @@ Wake, join Wi-Fi, fetch, draw, sleep. Pure decisions live in `logic.c` so they c
 - `esp_err_t wifi_join(const char *ssid, const char *pass, uint32_t timeout_ms)` and `esp_err_t net_fetch_frame(uint8_t *buf, size_t cap, size_t *out_len, int bat_mv, int *http_status)` in `net.h`. Fetch uses HTTPS with the ESP certificate bundle and the bearer token; the buffer is allocated from PSRAM (check whether internal RAM suffices).
 - A consecutive-failure counter kept in NVS (`wake_fail`).
 
-- [ ] **Step 1: Write the failing tests** in `test_logic.c`: `frame_ok(200, 172800) == true`; `false` for `(200, 172799)`, `(200, 0)`, `(204, 0)`, `(401, 172800)`, `(500, 172800)`. `next_sleep_seconds(true, 0) == 86400`; `next_sleep_seconds(false, 1) == FAIL_RETRY_SECONDS`.
-- [ ] **Step 2: Run `gcc firmware/test/test_logic.c firmware/main/logic.c -o /tmp/t && /tmp/t`.** Expected: FAIL to build.
-- [ ] **Step 3: Implement `logic.c`.** Run again. Expected: PASS.
+- [x] **Step 1: Write the failing tests** in `test_logic.c`: `frame_ok(200, 172800) == true`; `false` for `(200, 172799)`, `(200, 0)`, `(204, 0)`, `(401, 172800)`, `(500, 172800)`. `next_sleep_seconds(true, 0) == 86400`; `next_sleep_seconds(false, 1) == FAIL_RETRY_SECONDS`.
+- [x] **Step 2: Run `gcc firmware/test/test_logic.c firmware/main/logic.c -o /tmp/t && /tmp/t`.** Expected: FAIL to build.
+- [x] **Step 3: Implement `logic.c`.** Run again. Expected: PASS.
 - [ ] **Step 4: Implement `epd.c`, `net.c` and `main.c`.** Flow: read battery (stub returning 4000 until Task 6), join Wi-Fi (20 s timeout, 2 tries), fetch, check `frame_ok`, `epd_show_frame`, reset `wake_fail` to 0 on success, else increment it; then `esp_deep_sleep` for `next_sleep_seconds(...)`.
 - [ ] **Step 5: Verify on the bench against the deployed server.** Pass: serial log shows the photo id and the photo appears; the device then sleeps. With a wrong token in `menuconfig`, the log shows `keeping old image`, the panel does not refresh, and the next wake is scheduled for `FAIL_RETRY_SECONDS`.
 - [ ] **Step 6: Tune colors.** Show a six-color swatch frame from the server, photograph it next to the panel in daylight and adjust `PALETTE` RGB values in `server/imaging.py` until skin tones and grass look right. Commit the final values.
