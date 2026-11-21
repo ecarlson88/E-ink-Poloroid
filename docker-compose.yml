@@ -1,5 +1,5 @@
-# The magnet server. Secrets come from .env (git-ignored; copy .env.example).
-# HTTPS is handled by a reverse proxy in front of it, see server/README.md.
+# The magnet server behind a Cloudflare Tunnel. Secrets come from .env
+# (git-ignored; copy .env.example). Setup steps: server/README.md.
 services:
   magnet:
     build: ./server
@@ -8,7 +8,16 @@ services:
     volumes:
       - magnet-data:/data      # photos, frames and the database; see server/README.md for backups
     ports:
-      - "127.0.0.1:8000:8000"   # only reachable from this machine; the proxy forwards to it
+      - "127.0.0.1:8000:8000"   # local checks only; the internet reaches it through the tunnel
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    depends_on:
+      - magnet
 
 volumes:
   magnet-data:
