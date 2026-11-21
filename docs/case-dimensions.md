@@ -52,12 +52,17 @@ The header and its plastic strip (about 2.5 thick) are likely the thickest part 
 
 ## 4. Battery: 303450 LiPo
 
-Erik is measuring. Design notes say about 33.8 x 50 x 2.7, 500 mAh, protection circuit, 0.5C max charge.
+| Item | Value | Source |
+|---|---|---|
+| Size | **34 x 50 x 3.0** | Erik (typical figures for this cell; the name encodes 3.0 x 34 x 50) |
+| Capacity | 500 mAh, protection circuit, 0.5C (250 mA) max charge | `design.md` |
+
+Pouch cells usually carry their protection board and the lead exit on one short (34 mm) end, inside the 50 mm length. Check where the leads leave on the real cell. Leave a little free space around the pouch (it can swell slightly over its life) and never clamp it.
 
 ## Things that will shape the case
 
 1. **Antenna against a steel fridge door.** The magnet sits flat on steel, which blocks and detunes a 2.4 GHz antenna behind it. Put the antenna at the front or top edge, away from the back, and check Wi-Fi signal strength on the real fridge early.
-2. **Thickness budget (unmeasured):** panel ~1.0 + battery ~2.7 behind it ≈ 3.7 plus walls. The XIAO (~4.5) and the adapter (unknown, header ~2.5) are the thickest parts, which suggests putting them in the chin beside the panel rather than behind it.
+2. **Thickness budget (unmeasured):** panel ~1.0 + battery 3.0 behind it ≈ 4.0 plus front and back walls. The 34 x 50 battery uses well under the 58 x 85.64 area behind the panel. The XIAO (~4.5) and the adapter (unknown, header ~2.5) are the thickest parts, which suggests putting them in the chin beside the panel rather than behind it.
 3. **Chin below the panel:** the panel's wider bottom margin, the FPC exit and the chin all fall at the same edge. The FPC folds back behind the panel, so the adapter sits behind the bottom part of the panel or inside the chin.
 4. **USB-C** must face an outside edge of the chin (the plan says the case wraps the connector face). Reset and boot buttons sit right beside it.
 5. **Button for setup mode** (plan: D5) is a separate part not yet chosen.

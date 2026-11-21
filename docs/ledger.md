@@ -46,3 +46,4 @@ Finding: the panel datasheet contradicts itself on the active area (table 50.40x
 Finding: the DESPI-E01 datasheet shows only the 1.54" panel and a "24" connector, while the GDEH037E01 FPC is 32 pins at 0.8 mm, 26 mm wide, wider than the adapter's 20.6 mm connector edge — FPC fit is a real risk, confirm before designing the chin around the adapter
 Finding: XIAO charge current is 110 mA per the v1.4 schematic (design.md said 100; the wiki says 50) — within the 303450's 250 mA limit either way
 Finding: the XIAO uses an external U.FL rod antenna, and the magnet sits on a steel door — antenna placement is a case requirement; test RSSI on the real fridge
+Task 7 prep: battery 303450 is 3.0 x 34 x 50 (Erik; design.md had said ~2.7 thick) — added to case-dimensions.md
