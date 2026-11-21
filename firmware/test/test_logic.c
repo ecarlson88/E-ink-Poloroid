@@ -1,10 +1,11 @@
-/* Host tests for firmware/main/logic.c. Plain C, no ESP-IDF.
+/* Host tests for firmware/magnet/logic.c. Plain C, no ESP-IDF.
  * Build and run from the repo root:
- *   gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/main/logic.c -o /tmp/t && /tmp/t
+ *   gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/magnet/logic.c -o /tmp/t && /tmp/t
  */
 #include <stdio.h>
+#include <string.h>
 
-#include "../main/logic.h"
+#include "../magnet/logic.h"
 
 static int failures = 0;
 
@@ -34,10 +35,109 @@ static void test_next_sleep_seconds(void)
     CHECK(next_sleep_seconds(false, 1) == FAIL_RETRY_SECONDS);
 }
 
+/* Task 5: setup mode from the third consecutive failure. */
+static void test_should_enter_setup(void)
+{
+    CHECK(should_enter_setup(2) == false);
+    CHECK(should_enter_setup(3) == true);
+    CHECK(should_enter_setup(10) == true);
+}
+
+/* Task 6: low below 3500 mV. */
+static void test_battery_low(void)
+{
+    CHECK(battery_low(3499) == true);
+    CHECK(battery_low(3500) == false);
+}
+
+/* Task 6: the icon is 48x24 px, 16 px from the top and right edges. In the
+ * packed frame (2 px per byte, 240 bytes per row) that is rows 16..39 and
+ * bytes 208..231 of each row. */
+#define ROW_BYTES (480 / 2)
+#define ICON_ROW0 16
+#define ICON_ROWS 24
+#define ICON_BYTE0 ((480 - 16 - 48) / 2)
+#define ICON_BYTES (48 / 2)
+
+static bool in_icon(size_t i)
+{
+    size_t row = i / ROW_BYTES, col = i % ROW_BYTES;
+    return row >= ICON_ROW0 && row < ICON_ROW0 + ICON_ROWS &&
+           col >= ICON_BYTE0 && col < ICON_BYTE0 + ICON_BYTES;
+}
+
+static uint8_t frame_a[FRAME_BYTES], frame_b[FRAME_BYTES];
+
+static void test_overlay_low_battery(void)
+{
+    memset(frame_a, 0x11, sizeof frame_a);
+    overlay_low_battery(frame_a);
+
+    int outside_changed = 0, inside_changed = 0;
+    for (size_t i = 0; i < FRAME_BYTES; i++) {
+        if (frame_a[i] == 0x11) continue;
+        if (in_icon(i)) inside_changed++; else outside_changed++;
+    }
+    CHECK(outside_changed == 0);
+    CHECK(inside_changed > 0); /* the icon actually draws something */
+
+    memcpy(frame_b, frame_a, sizeof frame_b);
+    overlay_low_battery(frame_b);
+    CHECK(memcmp(frame_a, frame_b, FRAME_BYTES) == 0); /* idempotent */
+}
+
+/* Task 8: fill n samples with 50 mg noise, then place peaks. */
+#define SHAKE_N 150
+static int16_t samples[SHAKE_N];
+
+static void noise(void)
+{
+    for (size_t i = 0; i < SHAKE_N; i++) samples[i] = (int16_t)(i % 2 ? 50 : 10);
+}
+
+static void test_shake_is_deliberate(void)
+{
+    noise();
+    CHECK(shake_is_deliberate(samples, SHAKE_N, 1500, 4) == false);
+
+    noise();
+    samples[70] = 4000; /* a door slam: one big spike */
+    CHECK(shake_is_deliberate(samples, SHAKE_N, 1500, 4) == false);
+
+    noise();
+    for (int k = 0; k < 4; k++) samples[20 + 20 * k] = 2000;
+    CHECK(shake_is_deliberate(samples, SHAKE_N, 1500, 4) == true);
+
+    noise();
+    for (int k = 0; k < 4; k++) samples[20 + 3 * k] = 2000; /* too close: one peak */
+    CHECK(shake_is_deliberate(samples, SHAKE_N, 1500, 4) == false);
+}
+
+static void test_shake_allowed(void)
+{
+    CHECK(shake_allowed(7, 600, 8, 300) == true);
+    CHECK(shake_allowed(8, 600, 8, 300) == false);
+    CHECK(shake_allowed(2, 100, 8, 300) == false);
+}
+
+/* Task 8: a shake must not move the daily wake. */
+static void test_remaining_sleep_seconds(void)
+{
+    CHECK(remaining_sleep_seconds(100000000, 40000000) == 60);
+    CHECK(remaining_sleep_seconds(100000000, 100000001) == 0);
+    CHECK(remaining_sleep_seconds(100000000, 100000000) == 0);
+}
+
 int main(void)
 {
     test_frame_ok();
     test_next_sleep_seconds();
+    test_should_enter_setup();
+    test_battery_low();
+    test_overlay_low_battery();
+    test_shake_is_deliberate();
+    test_shake_allowed();
+    test_remaining_sleep_seconds();
     if (failures) {
         printf("%d check(s) failed\n", failures);
         return 1;

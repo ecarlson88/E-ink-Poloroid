@@ -7,13 +7,13 @@ Erik is building a thin color e-ink photo fridge magnet as a gift for his parent
 2. `docs/plan.md`: the 8-task build and test plan, with exact interfaces and test cases. Task 2 and Task 3 are done.
 3. `docs/ledger.md`: what has been built, and every decision made along the way (lines with `Ruling:`).
 4. `docs/datasheets/`: Good Display GDEH037E01 panel and DESPI-E01 adapter datasheets.
-5. `firmware/reference/GDEH037E01_idf.c`: Good Display's ESP-IDF sample for the panel (reference only, not built or run by us).
+5. `firmware/reference/GDEH037E01_idf.c`: Good Display's ESP-IDF sample for the panel (reference only; to be ported to Arduino in Task 1).
 6. `docs/phase2-custom-pcb.md`: a later, parked exploration. Do not build it now.
 
 ## Current state
 - `server/` is built and tested (16 tests). Run them from `server/`: `pip install fastapi uvicorn pillow httpx python-multipart itsdangerous pytest` then `pytest`.
 - Not done: Task 3 Step 5 (deploy behind HTTPS; needs Erik's host), and everything that needs hardware: Task 1 (bench bring-up) and Tasks 4 to 8 (firmware, setup mode, battery, case, shake). Erik has ordered the parts: XIAO ESP32-S3, GDEH037E01 panel with its DESPI-E01 adapter, a 303450 battery and an MPU6050.
-- Firmware: `firmware/main/logic.c`/`logic.h` (Task 4 Steps 1 to 3) is built and tested on the PC: from the repo root, `gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/main/logic.c -o /tmp/t && /tmp/t`. `firmware/bench` and the ESP-IDF parts of `firmware/main` do not exist yet.
+- Firmware is an Arduino IDE sketch in `firmware/magnet/` (Erik's choice; Arduino-ESP32 core, board XIAO_ESP32S3). The PC-testable logic (`logic.c`/`logic.h`) for Tasks 4, 5, 6 and 8 is done; run from the repo root: `gcc -Wall -Wextra -Werror firmware/test/test_logic.c firmware/magnet/logic.c -o /tmp/t && /tmp/t`. Tunables are in `settings.h`; secrets go in git-ignored `secrets.h` (template `secrets.example.h`). `magnet.ino`, `firmware/bench` and all hardware code do not exist yet.
 
 ## Rules
 - Follow the plan's interfaces and names exactly. Where the plan is wrong or silent, decide, and record a `Ruling:` line in `docs/ledger.md` with what it costs if wrong.
