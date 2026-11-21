@@ -8,7 +8,8 @@ Erik is building a thin color e-ink photo fridge magnet as a gift for his parent
 3. `docs/ledger.md`: what has been built, and every decision made along the way (lines with `Ruling:`).
 4. `docs/datasheets/`: Good Display GDEH037E01 panel and DESPI-E01 adapter datasheets.
 5. `firmware/reference/GDEH037E01_idf.c`: Good Display's ESP-IDF sample for the panel (reference only; to be ported to Arduino in Task 1).
-6. `docs/phase2-custom-pcb.md`: a later, parked exploration. Do not build it now.
+6. `docs/case-dimensions.md`: part dimensions for the case (Task 7), from the datasheets; unmeasured.
+7. `docs/phase2-custom-pcb.md`: a later, parked exploration. Do not build it now.
 
 ## Current state
 - `server/` is built and tested (33 tests), with a Docker deploy behind the Cloudflare Tunnel Erik already runs on his server (`docker-compose.yml`, steps in `server/README.md`; not yet run on Erik's host). It keeps each original upload, re-renders all frames at start when the render settings change, shuffles the rotation, and serves the upload page (status, multi-upload, show next, magnet preview). Run them from `server/`: `pip install fastapi uvicorn pillow httpx python-multipart itsdangerous pytest` then `pytest`.
