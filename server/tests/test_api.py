@@ -1,4 +1,5 @@
 import io
+import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -249,14 +250,17 @@ def test_status_requires_login(client):
 
 
 def test_photo_images(logged_in):
-    pid = _upload(logged_in, (200, 30, 30)).json()["id"]
-    r = logged_in.get(f"/api/photos/{pid}/image?view=original")
+    pid = _upload(logged_in, (200, 30, 30)).json()["id"]          # a 600 x 400 photo
+    r = logged_in.get(f"/api/photos/{pid}/image?view=original")   # the whole photo, for the crop editor
     assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
-    assert Image.open(io.BytesIO(r.content)).size == (480, 720)
-    r = logged_in.get(f"/api/photos/{pid}/image?view=panel")
+    assert Image.open(io.BytesIO(r.content)).size == (600, 400)
+    r = logged_in.get(f"/api/photos/{pid}/image?view=photo")      # the 3:4 crop in true color
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+    assert Image.open(io.BytesIO(r.content)).size == (480, 640)
+    r = logged_in.get(f"/api/photos/{pid}/image?view=panel")      # the picture as the magnet draws it
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     img = Image.open(io.BytesIO(r.content)).convert("RGB")
-    assert img.size == (480, 720)
+    assert img.size == (480, 640)
     import imaging
     assert {c for _, c in img.getcolors(10)} <= set(imaging.PALETTE.values())
 
@@ -273,3 +277,71 @@ def test_logout_ends_session(logged_in):
     assert logged_in.get("/api/photos").status_code == 200
     assert logged_in.post("/logout").status_code == 200
     assert logged_in.get("/api/photos").status_code == 401
+
+
+# --- Movable 3:4 crop (Erik) ----------------------------------------------------------------
+
+def _halves_png(w=1200, h=600):
+    img = Image.new("RGB", (w, h), (255, 0, 0))
+    img.paste(Image.new("RGB", (w // 2, h), (0, 0, 255)), (w // 2, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+CROP_W = 600 * 0.75 / 1200
+LEFT = {"x": 0.0, "y": 0.0, "w": CROP_W, "h": 1.0}
+RIGHT = {"x": 1 - CROP_W, "y": 0.0, "w": CROP_W, "h": 1.0}
+
+
+def test_upload_lists_size_and_default_crop(logged_in):
+    pid = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")}).json()["id"]
+    (p,) = [p for p in logged_in.get("/api/photos").json() if p["id"] == pid]
+    assert (p["width"], p["height"]) == (1200, 600)
+    assert abs(p["crop"]["x"] + p["crop"]["w"] / 2 - 0.5) < 1e-6 and p["crop"]["h"] == 1
+
+
+def test_upload_with_crop(logged_in):
+    import imaging
+    r = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")},
+                       data={"crop": json.dumps(LEFT)})
+    assert r.status_code == 200
+    pid = r.json()["id"]
+    assert logged_in.get("/api/photos").json()[0]["crop"]["x"] == 0
+    assert _next(logged_in).content == imaging.render_frame(_halves_png(), LEFT)
+    assert pid
+
+
+def test_upload_rejects_bad_crop(logged_in):
+    bad = {"x": 0.9, "y": 0, "w": CROP_W, "h": 1}
+    r = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")},
+                       data={"crop": json.dumps(bad)})
+    assert r.status_code == 400
+    assert logged_in.get("/api/photos").json() == []
+    r = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")}, data={"crop": "nope"})
+    assert r.status_code == 400
+
+
+def test_change_crop_rerenders_frame(logged_in):
+    import imaging
+    pid = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")},
+                         data={"crop": json.dumps(LEFT)}).json()["id"]
+    assert logged_in.put(f"/api/photos/{pid}/crop", json=RIGHT).status_code == 200
+    assert logged_in.get("/api/photos").json()[0]["crop"]["x"] == RIGHT["x"]
+    assert _next(logged_in).content == imaging.render_frame(_halves_png(), RIGHT)
+
+
+def test_change_crop_checks(client, logged_in):
+    pid = logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")}).json()["id"]
+    assert logged_in.put("/api/photos/999/crop", json=LEFT).status_code == 404
+    assert logged_in.put(f"/api/photos/{pid}/crop", json={"x": 0, "y": 0, "w": 0.5, "h": 1}).status_code == 400
+    client.cookies.clear()
+    assert client.put(f"/api/photos/{pid}/crop", json=LEFT).status_code == 401
+
+
+def test_rerender_keeps_each_crop(logged_in, monkeypatch):
+    import imaging
+    logged_in.post("/api/photos", files={"file": ("h.png", _halves_png(), "image/png")}, data={"crop": json.dumps(RIGHT)})
+    monkeypatch.setattr(imaging, "PICTURE_ROWS_FIRST", not imaging.PICTURE_ROWS_FIRST)
+    with TestClient(create_app(), base_url="https://testserver") as c2:   # restart: settings changed
+        assert _next(c2).content == imaging.render_frame(_halves_png(), RIGHT)

@@ -19,7 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import imaging
 import notify
-from imaging import frame_to_image, render_frame
+from imaging import render_frame
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 LOW_BATTERY_MV = 3500
@@ -120,7 +120,10 @@ def create_app() -> FastAPI:
             """
             CREATE TABLE IF NOT EXISTS photos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                created_at REAL NOT NULL
+                created_at REAL NOT NULL,
+                width INTEGER,
+                height INTEGER,
+                crop TEXT
             );
             CREATE TABLE IF NOT EXISTS state (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -135,6 +138,11 @@ def create_app() -> FastAPI:
             INSERT OR IGNORE INTO state (id) VALUES (1);
             """
         )
+        # Databases made before crops existed: add the columns.
+        have = {r["name"] for r in conn.execute("PRAGMA table_info(photos)")}
+        for col, kind in (("width", "INTEGER"), ("height", "INTEGER"), ("crop", "TEXT")):
+            if col not in have:
+                conn.execute(f"ALTER TABLE photos ADD COLUMN {col} {kind}")
 
     rerender_if_settings_changed(db, frames_dir, originals_dir)
 
@@ -174,16 +182,25 @@ def create_app() -> FastAPI:
         return {"ok": True}
 
     @app.post("/api/photos", dependencies=[Depends(require_login)])
-    def upload(file: UploadFile = File(...)) -> dict:
+    def upload(file: UploadFile = File(...), crop: str | None = Form(None)) -> dict:
         data = file.file.read(MAX_UPLOAD_BYTES + 1)
         if len(data) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="file larger than 15 MB")
         try:
-            frame = render_frame(data)
+            w, h = imaging.photo_size(data)
+            if crop is None:
+                chosen = imaging.default_crop(w, h)
+            else:
+                try:
+                    chosen = imaging.validate_crop(json.loads(crop), w, h)
+                except json.JSONDecodeError as exc:
+                    raise ValueError("the crop is not valid JSON") from exc
+            frame = render_frame(data, chosen)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         with db() as conn:  # the row is committed only if both files were written
-            cur = conn.execute("INSERT INTO photos (created_at) VALUES (?)", (time.time(),))
+            cur = conn.execute("INSERT INTO photos (created_at, width, height, crop) VALUES (?, ?, ?, ?)",
+                               (time.time(), w, h, json.dumps(chosen)))
             photo_id = cur.lastrowid
             original, frame_path = originals_dir / str(photo_id), frames_dir / f"{photo_id}.bin"
             try:
@@ -201,8 +218,30 @@ def create_app() -> FastAPI:
     @app.get("/api/photos", dependencies=[Depends(require_login)])
     def list_photos() -> list[dict]:
         with db() as conn:
-            rows = conn.execute("SELECT id, created_at FROM photos ORDER BY id").fetchall()
-        return [{"id": r["id"], "created_at": r["created_at"]} for r in rows]
+            rows = conn.execute("SELECT id, created_at, width, height, crop FROM photos ORDER BY id").fetchall()
+        return [{"id": r["id"], "created_at": r["created_at"], "width": r["width"], "height": r["height"],
+                 "crop": json.loads(r["crop"]) if r["crop"] else None} for r in rows]
+
+    @app.put("/api/photos/{photo_id}/crop", dependencies=[Depends(require_login)])
+    def change_crop(photo_id: int, crop: dict) -> dict:
+        """Move a photo's 3:4 crop (fractions of the upright photo) and re-render its frame."""
+        original = originals_dir / str(photo_id)
+        with db() as conn:
+            row = conn.execute("SELECT width, height FROM photos WHERE id = ?", (photo_id,)).fetchone()
+        if row is None or not original.exists():
+            raise HTTPException(status_code=404, detail="no such photo")
+        data = original.read_bytes()
+        w, h = (row["width"], row["height"]) if row["width"] else imaging.photo_size(data)
+        try:
+            chosen = imaging.validate_crop(crop, w, h)
+            frame = render_frame(data, chosen)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        _write_atomic(frames_dir / f"{photo_id}.bin", frame)
+        with db() as conn:
+            conn.execute("UPDATE photos SET crop = ?, width = ?, height = ? WHERE id = ?",
+                         (json.dumps(chosen), w, h, photo_id))
+        return {"ok": True}
 
     @app.delete("/api/photos/{photo_id}", dependencies=[Depends(require_login)])
     def delete_photo(photo_id: int) -> dict:
@@ -272,19 +311,25 @@ def create_app() -> FastAPI:
         }
 
     @app.get("/api/photos/{photo_id}/image", dependencies=[Depends(require_login)])
-    def photo_image(photo_id: int, view: Literal["original", "panel"]) -> Response:
+    def photo_image(photo_id: int, view: Literal["original", "photo", "panel"]) -> Response:
+        """original: the whole upright photo (for the crop editor); photo: the 3:4 crop in true
+        color; panel: the picture as the magnet draws it."""
         frame_path = frames_dir / f"{photo_id}.bin"
         with db() as conn:
-            exists = conn.execute("SELECT 1 FROM photos WHERE id = ?", (photo_id,)).fetchone()
-        if exists is None or not frame_path.exists():
+            row = conn.execute("SELECT crop FROM photos WHERE id = ?", (photo_id,)).fetchone()
+        if row is None or not frame_path.exists():
             raise HTTPException(status_code=404, detail="no such photo")
         buf = io.BytesIO()
         original = originals_dir / str(photo_id)
         if view == "original" and original.exists():
             imaging.preview_original(original.read_bytes()).save(buf, format="JPEG", quality=85)
             media = "image/jpeg"
+        elif view == "photo" and original.exists():
+            crop = json.loads(row["crop"]) if row["crop"] else None
+            imaging.picture_image(original.read_bytes(), crop).save(buf, format="JPEG", quality=85)
+            media = "image/jpeg"
         else:  # the panel view, also the fallback for photos stored before originals were kept
-            frame_to_image(frame_path.read_bytes()).save(buf, format="PNG")
+            imaging.frame_picture(frame_path.read_bytes()).save(buf, format="PNG")
             media = "image/png"
         return Response(buf.getvalue(), media_type=media,
                         headers={"Cache-Control": "private, max-age=3600"})
@@ -300,14 +345,16 @@ def rerender_if_settings_changed(db, frames_dir: Path, originals_dir: Path) -> N
         stored = conn.execute("SELECT render_key FROM state WHERE id = 1").fetchone()["render_key"]
         if stored == key:
             return
-        ids = [r["id"] for r in conn.execute("SELECT id FROM photos ORDER BY id")]
+        rows = conn.execute("SELECT id, crop FROM photos ORDER BY id").fetchall()
+    ids = [r["id"] for r in rows]
+    crops = {r["id"]: json.loads(r["crop"]) if r["crop"] else None for r in rows}
     for photo_id in ids:
         original = originals_dir / str(photo_id)
         if not original.exists():
             log.warning("photo %s has no original; keeping its old frame", photo_id)
             continue
         try:
-            frame = render_frame(original.read_bytes())
+            frame = render_frame(original.read_bytes(), crops[photo_id])
         except ValueError:
             log.exception("photo %s could not be re-rendered; keeping its old frame", photo_id)
             continue

@@ -1,9 +1,21 @@
 # Magnet server
 
 Erik uploads photos; the magnet fetches ready-to-draw frames. Uploads are kept
-as originals under `DATA_DIR/originals`; when the palette or nibble order in
-`imaging.py` changes, every frame is re-rendered from its original at the next
-start.
+as originals under `DATA_DIR/originals`; when the palette, nibble order or picture
+placement in `imaging.py` changes, every frame is re-rendered from its original
+(with its crop) at the next start.
+
+**3:4 picture with a movable crop.** The case masks the panel's ribbon end, so each
+photo fills a 480 x 640 (3:4) picture at the other end of the frame and the last
+80 rows stay white. `PICTURE_ROWS_FIRST` in `imaging.py` says which end; it's an
+assumption until the bench test (Task 1 Step 4). The upload page opens a crop
+editor for each photo (drag the 3:4 box, zoom slider, or "upload the rest
+centred"), and each photo's **Crop** button moves it later. API:
+`POST /api/photos` takes an optional `crop` form field (JSON `{x, y, w, h}`,
+fractions of the upright photo, 3:4); `PUT /api/photos/{id}/crop` with the same
+JSON re-renders that photo; `GET /api/photos` lists `width`, `height` and `crop`;
+`GET /api/photos/{id}/image?view=original|photo|panel` gives the whole photo, the
+3:4 crop, or the picture as the magnet draws it.
 
 ## Run with Docker and a Cloudflare Tunnel (recommended)
 

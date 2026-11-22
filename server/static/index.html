@@ -50,7 +50,7 @@
   .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px; }
   .card { margin: 0; background: var(--card); padding: 8px 8px 0; box-shadow: var(--shadow); position: relative; }
   .card.is-next { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .photo { display: block; width: 100%; padding: 0; border: none; background: #DDE1E6; aspect-ratio: 2 / 3; position: relative; overflow: hidden; }
+  .photo { display: block; width: 100%; padding: 0; border: none; background: #DDE1E6; aspect-ratio: 3 / 4; position: relative; overflow: hidden; }
   .photo img { width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: auto; }
   .photo.panel img { image-rendering: pixelated; }
   .pill { position: absolute; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; color: #FFF; pointer-events: none; }
@@ -65,6 +65,26 @@
   .chin button { border: none; background: none; font-size: 13px; font-weight: 600; min-height: 44px; padding: 0 2px; }
   .chin button.on { color: var(--accent); cursor: default; }
   .empty { margin-top: 28px; text-align: center; color: var(--muted); }
+  .chin .acts { display: flex; gap: 10px; }
+
+  /* Crop editor */
+  dialog#cropper { border: none; border-radius: 14px; padding: 16px; max-width: min(560px, calc(100vw - 24px)); width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  dialog#cropper::backdrop { background: rgba(21,23,26,.55); }
+  #crop-title { margin: 0 0 2px; font-size: 17px; }
+  #crop-sub { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+  .stage-wrap { display: flex; justify-content: center; background: #F4F5F7; border-radius: 10px; padding: 8px; }
+  .stage { position: relative; display: inline-block; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; line-height: 0; }
+  .stage img { display: block; max-width: 100%; max-height: 58vh; }
+  .crop-box { position: absolute; box-shadow: 0 0 0 9999px rgba(21,23,26,.55); outline: 2px solid #FFF; cursor: grab; touch-action: none; }
+  .crop-box:active { cursor: grabbing; }
+  .crop-box::after { content: ""; position: absolute; inset: 0; background:
+      linear-gradient(to right, transparent 33.2%, rgba(255,255,255,.5) 33.3%, transparent 33.4%, transparent 66.5%, rgba(255,255,255,.5) 66.6%, transparent 66.7%),
+      linear-gradient(to bottom, transparent 33.2%, rgba(255,255,255,.5) 33.3%, transparent 33.4%, transparent 66.5%, rgba(255,255,255,.5) 66.6%, transparent 66.7%); pointer-events: none; }
+  .zoom { display: flex; align-items: center; gap: 10px; margin: 12px 2px 4px; font-size: 13px; color: var(--muted); }
+  .zoom input { flex: 1; min-height: 44px; }
+  .crop-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+  .crop-actions button { min-height: 44px; padding: 0 16px; border-radius: 10px; font-weight: 600; border: 1px solid var(--line); background: var(--card); }
+  .crop-actions .primary { border: none; background: var(--ink); color: #FFF; }
 </style>
 </head>
 <body>
@@ -105,6 +125,18 @@
   <div class="grid" id="grid"></div>
   <p class="empty" id="empty" hidden>No photos yet. Add some and the magnet will pick a new one each morning.</p>
 </main>
+
+<dialog id="cropper" aria-labelledby="crop-title">
+  <h2 id="crop-title">Frame the photo</h2>
+  <p id="crop-sub">Drag the box to choose what shows on the magnet.</p>
+  <div class="stage-wrap"><div class="stage" id="stage"><img id="crop-img" alt="Photo being cropped"><div class="crop-box" id="crop-box"></div></div></div>
+  <label class="zoom" for="zoom">Zoom <input id="zoom" type="range" min="35" max="100" value="100"></label>
+  <div class="crop-actions">
+    <button type="button" id="crop-rest" hidden>Upload the rest centred</button>
+    <button type="button" id="crop-skip">Skip</button>
+    <button type="button" id="crop-ok" class="primary">Upload</button>
+  </div>
+</dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -161,7 +193,8 @@ function renderStatus() {
 function card(p) {
   const panel = panelView.has(p.id);
   const isNow = p.id === status.current_id, isNext = p.id === status.next_id;
-  const img = el("img", { alt: "", loading: "lazy", src: `/api/photos/${p.id}/image?view=${panel ? "panel" : "original"}` });
+  const v = p.crop ? [p.crop.x, p.crop.y, p.crop.w].map((n) => n.toFixed(4)).join("") : "0";   // new crop, new image
+  const img = el("img", { alt: "", loading: "lazy", src: `/api/photos/${p.id}/image?view=${panel ? "panel" : "photo"}&v=${v}` });
   const photo = el("button", {
     type: "button", className: "photo" + (panel ? " panel" : ""),
     ariaLabel: panel ? "Show the original photo" : "Show how the magnet will draw it",
@@ -183,8 +216,17 @@ function card(p) {
                                  className: isNext ? "on" : "" });
   if (isNext) nextBtn.disabled = true;
   else nextBtn.onclick = async () => { await api(`/api/photos/${p.id}/next`, { method: "POST" }); refresh(); };
-  const chin = el("figcaption", { className: "chin" }, el("span", { className: "date", textContent: shortDate(p.created_at) }));
-  if (photos.length > 1) chin.append(nextBtn);
+  const cropBtn = el("button", { type: "button", textContent: "Crop", title: "Move what shows on the magnet" });
+  cropBtn.onclick = async () => {
+    const res = await editCrop(`/api/photos/${p.id}/image?view=original`, p.crop, { title: "Move the crop", ok: "Save", skip: "Cancel" });
+    if (res.action !== "ok" || !res.crop) return;
+    const r = await api(`/api/photos/${p.id}/crop`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(res.crop) });
+    $("msg").textContent = r.ok ? "" : (await r.json()).detail;
+    refresh();
+  };
+  const acts = el("span", { className: "acts" }, cropBtn);
+  if (photos.length > 1) acts.append(nextBtn);
+  const chin = el("figcaption", { className: "chin" }, el("span", { className: "date", textContent: shortDate(p.created_at) }), acts);
   fig.append(del, chin);
   return fig;
 }
@@ -207,16 +249,87 @@ async function refresh() {
   } catch (e) { /* the login form is showing */ }
 }
 
+// --- Crop editor: a 3:4 box over the photo, dragged to place it, zoomed with the slider.
+// Crops are fractions of the upright photo, which is what the server expects.
+const RATIO = 3 / 4;   // picture width / height
+function maxCrop(W, H) {
+  if (W / H > RATIO) { const w = RATIO * H / W; return { x: (1 - w) / 2, y: 0, w, h: 1 }; }
+  const h = W / (RATIO * H); return { x: 0, y: (1 - h) / 2, w: 1, h };
+}
+
+function editCrop(src, initial, opts) {
+  const dlg = $("cropper"), img = $("crop-img"), box = $("crop-box"), zoom = $("zoom");
+  $("crop-title").textContent = opts.title;
+  $("crop-ok").textContent = opts.ok || "Upload";
+  $("crop-skip").textContent = opts.skip || "Skip";
+  $("crop-rest").hidden = !opts.rest;
+  return new Promise((resolve) => {
+    let mx, s = 1, cx = 0.5, cy = 0.5;
+    const crop = () => {
+      const w = mx.w * s, h = mx.h * s;
+      cx = Math.min(Math.max(cx, w / 2), 1 - w / 2);
+      cy = Math.min(Math.max(cy, h / 2), 1 - h / 2);
+      return { x: cx - w / 2, y: cy - h / 2, w, h };
+    };
+    const draw = () => {
+      const c = crop();
+      Object.assign(box.style, { left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.w * 100}%`, height: `${c.h * 100}%` });
+    };
+    const done = (action) => {
+      dlg.close();
+      img.onload = img.onerror = box.onpointerdown = box.onpointermove = zoom.oninput = null;
+      resolve({ action, crop: mx ? crop() : null });
+    };
+    img.onload = () => {
+      mx = maxCrop(img.naturalWidth, img.naturalHeight);
+      if (initial) { s = Math.min(1, initial.w / mx.w); cx = initial.x + initial.w / 2; cy = initial.y + initial.h / 2; }
+      else { s = 1; cx = cy = 0.5; }
+      zoom.value = Math.round(s * 100);
+      draw();
+    };
+    img.onerror = () => done("ok");   // a photo the browser can't show (e.g. HEIC): the server crops it centred
+    let last = null;
+    box.onpointerdown = (e) => { last = [e.clientX, e.clientY]; box.setPointerCapture(e.pointerId); e.preventDefault(); };
+    box.onpointermove = (e) => {
+      if (!last || !mx) return;
+      cx += (e.clientX - last[0]) / img.clientWidth;
+      cy += (e.clientY - last[1]) / img.clientHeight;
+      last = [e.clientX, e.clientY];
+      draw();
+    };
+    box.onpointerup = box.onpointercancel = () => { last = null; };
+    zoom.oninput = () => { s = zoom.value / 100; if (mx) draw(); };
+    $("crop-ok").onclick = () => done("ok");
+    $("crop-skip").onclick = () => done("skip");
+    $("crop-rest").onclick = () => done("rest");
+    dlg.oncancel = (e) => { e.preventDefault(); done("skip"); };
+    img.src = src;
+    dlg.showModal();
+  });
+}
+
 async function upload(files) {
   files = [...files];
   if (!files.length) return;
   const errors = [];
   $("msg").textContent = "";
+  let centreRest = false;
   for (const [i, f] of files.entries()) {
+    let crop = null;
+    if (!centreRest) {
+      const url = URL.createObjectURL(f);
+      const res = await editCrop(url, null, { title: files.length > 1 ? `Photo ${i + 1} of ${files.length}` : "Frame the photo",
+                                              rest: files.length - i > 1 });
+      URL.revokeObjectURL(url);
+      if (res.action === "skip") continue;
+      if (res.action === "rest") centreRest = true;
+      crop = res.crop;
+    }
     $("drop-title").textContent = `Uploading ${i + 1} of ${files.length}…`;
     $("drop-sub").textContent = f.name;
     const body = new FormData();
     body.append("file", f);
+    if (crop) body.append("crop", JSON.stringify(crop));
     try {
       const r = await api("/api/photos", { method: "POST", body });
       if (!r.ok) errors.push(`${f.name}: ${(await r.json()).detail}`);
