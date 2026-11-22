@@ -36,3 +36,19 @@
 #ifndef SETUP_HOLD_MS
 #define SETUP_HOLD_MS 5000u
 #endif
+
+/* Task 5: the edge button still down after this long is stuck (jammed against the door
+ * seal): no setup, no photo, and D5 is left out of the wake pins until it lets go. */
+#ifndef BUTTON_STUCK_MS
+#define BUTTON_STUCK_MS 15000u
+#endif
+
+/* Which wake pins are wired on this build. Unwired pins would float in deep sleep and
+ * wake the magnet, so they are never armed. 1 only for the acrylic case (edge button on
+ * D5) and for builds with the MPU6050 fitted (Task 8, interrupt on D9). */
+#ifndef HAS_EDGE_BUTTON
+#define HAS_EDGE_BUTTON 0
+#endif
+#ifndef HAS_MPU
+#define HAS_MPU 0
+#endif

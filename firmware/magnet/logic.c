@@ -99,7 +99,16 @@ boot_action_t boot_action(wake_kind_t wake, bool double_press_flag)
     return double_press_flag ? BOOT_SETUP : BOOT_ARM_DOUBLE_PRESS;
 }
 
-button_action_t button_action(uint32_t held_ms)
+button_action_t button_action(uint32_t held_ms, bool released)
 {
+    if (!released) return BUTTON_STUCK;
     return held_ms >= SETUP_HOLD_MS ? BUTTON_SETUP : BUTTON_NEXT_PHOTO;
+}
+
+uint8_t wake_pins(bool has_button, bool button_low, bool has_mpu)
+{
+    uint8_t pins = 0;
+    if (has_button && !button_low) pins |= WAKE_PIN_D5;
+    if (has_mpu) pins |= WAKE_PIN_D9;
+    return pins;
 }

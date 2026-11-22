@@ -43,11 +43,15 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
 - **Front:** a 1 mm clear acrylic sheet over the whole front (`SheetT`), glass-ready: flat, no
   holes or pockets. A white vinyl mask (`MaskT` 0.1) on its back leaves the same 3:4 window as
   the compact case (50.6 x 67.5) and hides the panel's border, so there is no printed frame.
+- **Bond stack:** the vinyl covers the whole back of the sheet except the window, so it lies on
+  the rim too. The tray's rim, rib and ledge stop `MaskT + TapeT` (0.1 + 0.25) below the sheet
+  (`BondZ` 5.80), so with the tape the case is still **7.15** overall. Measure your tape and set
+  `TapeT`; `python3 check_acrylic_stack.py` checks the stack in the built model.
 - **`acrylic_sheet.svg`:** red is the sheet outline (laser cut), blue is the mask window (vinyl
   cutter). It is drawn **seen from the back**, because the vinyl goes on the back of the sheet.
 - **Tray:** one FDM print, back on the bed, no supports. Walls 1.2 (`Wall`), bottom 1.0
   (`ChinWall`, so the slim antenna clears the cable fold), back 1.0. Its top rim, the left rib
-  and a 0.8 ledge across the chin (`LedgeT`) carry the sheet.
+  and a 0.8 ledge across the chin (`LedgeT`) carry the sheet (through the mask and the tape).
 - **XIAO, mounting A:** upright at the right, parts and buttons facing the back, `XiaoGap` 0.65
   (0.45 for joints plus 0.2 clearance: the mask took 0.1). The USB-C sits in a notch through the
   back and bottom walls, its face flush with the bottom edge and its body ending at the back face.
@@ -58,12 +62,13 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   through a plunger slot in the bottom wall (`PlungerW` x `PlungerH`), with a backstop rib behind
   it. `SwW`, `SwD`, `SwT` and the slot are **placeholders until the part is chosen**.
 - **Antenna (Erik: option A):** the slim 44 x 4.5 FPC antenna sticks to the back of the chin
-  ledge, left of the USB-C notch (not modelled; see `../layout_acrylic.py`).
+  ledge, left of the USB-C notch, 4.8 from the back face (not modelled; see `../layout_acrylic.py`).
 - **Magnets:** six bars on the left, four on the right above the XIAO. Their bosses sit under
   the battery's edge, which clears them by 0.35 in depth. Discs: as in the compact case.
 - **Checked** (SolidCraft CLI and the parametric-3d-parts skill's `verify.py`): both build, 0
-  interferences; changing XiaoGap, CornerR, SwX and LedgeT together rebuilt all 24 features
-  with face counts unchanged (discs: XiaoGap and CornerR, 22 features). Not opened in the
+  interferences; changing XiaoGap, CornerR, SwX, LedgeT and TapeT together rebuilt all 24
+  features with face counts unchanged (discs: XiaoGap, CornerR and TapeT, 22 features);
+  `check_acrylic_stack.py` passes. Not opened in the
   desktop app.
 - **Assembly:** thin VHB tape on the rim, the rib and the ledge (warm it to open the case); vinyl
   on the back of the sheet before fitting; foam pads behind the panel as in the compact case;

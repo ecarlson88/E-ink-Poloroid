@@ -212,7 +212,15 @@
   "params": {
    "name": "MaskT",
    "expression": "0.1 mm",
-   "comment": "white vinyl mask on the back of the sheet"
+   "comment": "white vinyl mask on the back of the sheet (all of it but the window)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "TapeT",
+   "expression": "0.25 mm",
+   "comment": "tape between the mask and the tray's rim, rib and ledge (thin VHB; measure yours)"
   }
  },
  {
@@ -609,6 +617,14 @@
   }
  },
  {
+  "command": "parameters.add",
+  "params": {
+   "name": "BondZ",
+   "expression": "ShellH - MaskT - TapeT",
+   "comment": "tray rim height: the mask and the tape lie on the rim, rib and ledge"
+  }
+ },
+ {
   "command": "sketch.create",
   "params": {
    "plane": "XY",
@@ -658,7 +674,7 @@
  {
   "command": "solid.extrude",
   "params": {
-   "distance": "ShellH",
+   "distance": "BondZ",
    "name": "Shell",
    "body_name": "Tray"
   }
@@ -667,7 +683,7 @@
   "command": "sketch.create",
   "params": {
    "plane": "XY",
-   "offset": "ShellH",
+   "offset": "BondZ",
    "name": "Cavity"
   }
  },
@@ -714,7 +730,7 @@
  {
   "command": "solid.extrude",
   "params": {
-   "distance": "InnerD",
+   "distance": "InnerD - MaskT - TapeT",
    "direction": "negative",
    "operation": "cut",
    "targets": [
@@ -1289,7 +1305,7 @@
  {
   "command": "solid.extrude",
   "params": {
-   "distance": "InnerD",
+   "distance": "InnerD - MaskT - TapeT",
    "operation": "join",
    "targets": [
     "Tray"
@@ -1301,7 +1317,7 @@
   "command": "sketch.create",
   "params": {
    "plane": "XY",
-   "offset": "ShellH - LedgeT",
+   "offset": "BondZ - LedgeT",
    "name": "ChinLedge"
   }
  },
@@ -1653,47 +1669,47 @@
     [
      30.5,
      0,
-     6.15
+     5.800000000000001
     ],
     [
      30.5,
      94.74,
-     6.15
+     5.800000000000001
     ],
     [
      0,
      47.37,
-     6.15
+     5.800000000000001
     ],
     [
      1.1715728752538102,
      1.1715728752538102,
-     6.15
+     5.800000000000001
     ],
     [
      59.82842712474619,
      1.1715728752538102,
-     6.15
+     5.800000000000001
     ],
     [
      59.82842712474619,
      93.56842712474618,
-     6.15
+     5.800000000000001
     ],
     [
      1.1715728752538102,
      93.56842712474618,
-     6.15
+     5.800000000000001
     ],
     [
      61.0,
      47.37,
-     6.15
+     5.800000000000001
     ],
     [
      56.175,
      0,
-     6.15
+     5.800000000000001
     ]
    ],
    "radius": "RimR",

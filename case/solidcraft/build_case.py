@@ -184,7 +184,8 @@ if ACRYLIC:
     drop = {"SideFrame", "TopFrame", "FrontWall", "FrontR", "SeamR", "WinChamfer", "LipW", "LipH", "LipGap", "UsbPocket"}
     PARAMS = [p for p in PARAMS if p[0] not in drop]
     set_param("SheetT", "1 mm", "front sheet: 1 mm acrylic (glass-ready: flat, no holes)", after="Clear")
-    set_param("MaskT", "0.1 mm", "white vinyl mask on the back of the sheet", after="SheetT")
+    set_param("MaskT", "0.1 mm", "white vinyl mask on the back of the sheet (all of it but the window)", after="SheetT")
+    set_param("TapeT", "0.25 mm", "tape between the mask and the tray's rim, rib and ledge (thin VHB; measure yours)", after="MaskT")
     set_param("RimR", "0.3 mm", "fillet on the tray's top outer edge, under the sheet's edge", after="BackR")
     set_param("ChinWall", "1 mm", "bottom wall: 1.0 so the slim antenna clears the cable fold (ledger)")
     set_param("XiaoGap", "0.65 mm", "panel back to the XIAO's underside: 0.45 joints + 0.2 clearance (the mask took 0.1)")
@@ -204,6 +205,7 @@ if ACRYLIC:
         ("PlungerH", "1 mm", "plunger slot height (placeholder)"),
         ("LedgeT", "0.8 mm", "chin ledge under the sheet: tape area; the antenna sticks to its back"),
         ("LedgeTop", "PanelY - Fold - Clear", "top of the chin ledge (clear of the panel cable fold)"),
+        ("BondZ", "ShellH - MaskT - TapeT", "tray rim height: the mask and the tape lie on the rim, rib and ledge"),
     ]
 
 if STYLE == "discs":
@@ -235,12 +237,13 @@ SHELL = "Tray" if ACRYLIC else "BackShell"
 c("sketch.create", plane="XY", name="ShellOutline")
 rounded_rect(0, 0, "CaseW", "CaseH", "CornerR", 1)
 c("sketch.finish")
-c("solid.extrude", distance="ShellH", name="Shell", body_name=SHELL)
+c("solid.extrude", distance="BondZ" if ACRYLIC else "ShellH", name="Shell", body_name=SHELL)
 
-c("sketch.create", plane="XY", offset="ShellH", name="Cavity")
+c("sketch.create", plane="XY", offset="BondZ" if ACRYLIC else "ShellH", name="Cavity")
 rounded_rect("Wall", "ChinWall" if ACRYLIC else "Wall", "CaseW - Wall", "CaseH - Wall", "CornerR - Wall", 1)
 c("sketch.finish")
-c("solid.extrude", distance="InnerD", direction="negative", operation="cut", targets=[SHELL], name="Hollow")
+c("solid.extrude", distance="InnerD - MaskT - TapeT" if ACRYLIC else "InnerD", direction="negative", operation="cut",
+  targets=[SHELL], name="Hollow")
 
 if STYLE == "bars":
     # Magnet bars stand upright against each side wall: a boss on the inside of the back wall
@@ -293,12 +296,12 @@ else:
 if not SQUARE:   # in the square layout the XIAO takes the right rib's place
     rect("CaseW / 2 + RibGap / 2", "RibY", "CaseW - Wall - 2 * LipGap - LipW", "RibY + RibT")
 c("sketch.finish")
-c("solid.extrude", distance="InnerD", operation="join", targets=[SHELL], name="Ribs")
+c("solid.extrude", distance="InnerD - MaskT - TapeT" if ACRYLIC else "InnerD", operation="join", targets=[SHELL], name="Ribs")
 
 if ACRYLIC:
     # Chin ledge under the sheet (tape area; the antenna sticks to its back), its bottom corners
     # chamfered inside the cavity's corner arcs; it runs 0.3 into the walls so it joins them.
-    c("sketch.create", plane="XY", offset="ShellH - LedgeT", name="ChinLedge")
+    c("sketch.create", plane="XY", offset="BondZ - LedgeT", name="ChinLedge")
     c("sketch.line", points=[["CornerR", "ChinWall - 0.3 mm"], ["CaseW - CornerR", "ChinWall - 0.3 mm"],
                              ["CaseW - Wall + 0.3 mm", "ChinWall + CornerR - Wall"], ["CaseW - Wall + 0.3 mm", "LedgeTop"],
                              ["Wall - 0.3 mm", "LedgeTop"], ["Wall - 0.3 mm", "ChinWall + CornerR - Wall"]], closed=True)
@@ -428,7 +431,7 @@ def outline(z, right_split=False, bottom_split=False):
 if ACRYLIC:
     # The USB-C notch splits the bottom edge at both the back face and the tray's top.
     c("solid.fillet", edges=outline(0, bottom_split=True), radius="BackR", body=SHELL, name="BackEdgeFillet")
-    c("solid.fillet", edges=outline(v["ShellH"], bottom_split=True), radius="RimR", body=SHELL, name="RimFillet")
+    c("solid.fillet", edges=outline(v["BondZ"], bottom_split=True), radius="RimR", body=SHELL, name="RimFillet")
 else:
     top = v["ShellH"] + v["FrontWall"]
     c("solid.fillet", edges=outline(top), radius="FrontR", body="FrontFrame", name="FrontEdgeFillet")

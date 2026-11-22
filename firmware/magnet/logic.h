@@ -51,12 +51,19 @@ typedef enum { WAKE_POWER_ON, WAKE_DEEP_SLEEP, WAKE_OTHER } wake_kind_t;
 typedef enum { BOOT_NORMAL, BOOT_ARM_DOUBLE_PRESS, BOOT_SETUP } boot_action_t;
 boot_action_t boot_action(wake_kind_t wake, bool double_press_flag);
 
-/* Task 5 (Erik): the edge button on D5 (acrylic case). After a D5 wake, main times how
- * long D5 stays low, up to SETUP_HOLD_MS, and acts on the result:
- *   BUTTON_NEXT_PHOTO: run the normal fetch and draw (not counted against the shake cap)
- *   BUTTON_SETUP: open setup mode, as on the third failed wake */
-typedef enum { BUTTON_NEXT_PHOTO, BUTTON_SETUP } button_action_t;
-button_action_t button_action(uint32_t held_ms);
+/* Task 5 (Erik): the edge button on D5 (acrylic case). After a D5 wake, main polls D5
+ * until it is released or BUTTON_STUCK_MS passes, and acts on the result:
+ *   BUTTON_NEXT_PHOTO: fetch and draw, if shake_allowed (presses share the shake cap)
+ *   BUTTON_SETUP: held SETUP_HOLD_MS (5 s) or more, then released: open setup mode
+ *   BUTTON_STUCK: never released: do nothing; wake_pins leaves D5 out while it is down */
+typedef enum { BUTTON_NEXT_PHOTO, BUTTON_SETUP, BUTTON_STUCK } button_action_t;
+button_action_t button_action(uint32_t held_ms, bool released);
+
+/* Which pins to arm for EXT1 any-low wake before deep sleep (bit mask). Only wired pins
+ * (HAS_EDGE_BUTTON, HAS_MPU), and never D5 while it reads low (a stuck button). */
+#define WAKE_PIN_D5 0x1u
+#define WAKE_PIN_D9 0x2u
+uint8_t wake_pins(bool has_button, bool button_low, bool has_mpu);
 
 #ifdef __cplusplus
 }
