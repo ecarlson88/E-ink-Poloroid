@@ -9,7 +9,7 @@
 
 ## Layout v1 (proposal, datasheet numbers, unmeasured)
 
-About **64.6 x 110.8 x 6.8 mm**.
+About **64.6 x 110.8 x 6.7 mm**.
 
 - **Panel** at the top, behind a front frame 3 mm wide at the sides and top. The frame
   covers the panel edge and overlaps the active area by 0.5 mm per side (the masking idea).
@@ -40,7 +40,7 @@ About **64.6 x 110.8 x 6.8 mm**.
   the chin to below the top corners. They are **glued into pockets** in the back wall,
   open on the inside. Each pocket leaves a 0.4 mm skin on the fridge side and its pad
   stands 0.4 mm proud inside, in the strip between the side wall and the battery or
-  adapter (1.9 mm clear of the battery), so the case stays 6.8 mm. Total magnet area is
+  adapter (1.9 mm clear of the battery), so they add no thickness. Total magnet area is
   288 mm², about 1.4x the four discs, and it reaches the top edge.
   **Option: Erik's 8 mm discs, measured 0.6 thick** (`layout_v1_discs.png`). Pocket plus 0.4 skin equals
   the 1.0 back wall, so they are flush inside and can go anywhere: six, at the top corners
@@ -51,9 +51,11 @@ About **64.6 x 110.8 x 6.8 mm**.
   - Size the pockets about 0.2 mm over the magnet and fit them all with the same pole
     facing out.
   - Holding force through a 0.4 mm skin is a little lower than touching.
-- **Depth:** 1.0 front wall + inner 4.8 + 1.0 back wall. Inside, the XIAO stack sets it:
-  ~1.0 wire joints + 3.25 board and shield can (+0.6 clearance). The panel + battery
-  side needs 4.0 (+0.6).
+- **Depth:** 1.0 front wall + inner 4.7 + 1.0 back wall. With Erik's measured XIAO (2.8
+  without the USB-C, 4.4 with it), the **USB-C sets it**: it must stay flush with the back
+  face, so front wall + 0.3 clearance + ~1.0 wire joints + 4.4 = 6.7. Flatter joints
+  (<= 0.9) let the panel + battery stack (4.0 + 0.6) set it instead: 6.6. A thinner battery
+  saves nothing more unless the chin is raised (thicker than the photo area).
 
 ## Assembly (Erik's choices)
 
@@ -70,7 +72,7 @@ About **64.6 x 110.8 x 6.8 mm**.
 
 ## Open before CAD
 
-- Measured sizes: XIAO height without the USB-C (STEP model 3.25, Erik estimates ~2;
-  if it is 2, the panel and battery set the depth instead), wire joint height, panel visible area (50.4 x 75.6 or 51.6 x 77.04), adapter thickness
+- Measured sizes: wire joint height (the XIAO is measured: 2.8 / 4.4; re-check on the
+  ESP32-S3 if the measurement was on the nRF52840 stand-in), panel visible area (50.4 x 75.6 or 51.6 x 77.04), adapter thickness
   with the header removed, where the battery leads leave, and the antenna's size.
 - Whether the panel cable fits the adapter at all (`docs/case-dimensions.md`, section 2).

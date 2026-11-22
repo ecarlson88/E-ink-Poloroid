@@ -49,7 +49,7 @@ Two magnet options, same everything else:
     so the panel side of the window, and the masking, are unchanged.
   - The USB-C notch and pinhole edges are left sharp.
 
-Overall 64.6 x 110.8 x 6.85.
+Overall 64.6 x 110.8 x 6.7 (with Erik's measured XIAO: 2.8 without the USB-C, 4.4 with it).
 
 ## Changing sizes
 

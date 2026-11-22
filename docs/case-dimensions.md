@@ -39,8 +39,8 @@ The header and its plastic strip (about 2.5 thick) are likely the thickest part 
 | Item | Value | Source |
 |---|---|---|
 | Board | **21 x 17.8** (model: 20.96 x 17.78), rounded corners | Seeed wiki and product sheet, STEP model |
-| Total height | **~4.5** from the underside to the top of the USB-C connector | measured from Seeed's STEP model (`XIAO-ESP32S3_v2.step`) |
-| PCB + metal shield can | ~3.25 | STEP model |
+| Total height | **4.4 measured** by Erik, underside to the top of the USB-C (STEP model: 4.46) | caliper |
+| PCB + metal shield can | **2.8 measured** by Erik (STEP model: ~3.25) | caliper |
 | USB-C connector | on a short edge, about 8.9 wide x 4.2 tall, **sticks out ~1.5 past the board edge** | STEP model, `top_view.jpg` |
 | Buttons | **R** (reset) and **B** (boot), tiny side-by-side buttons on the top face, either side of the USB-C | `top_view.jpg` |
 | LEDs | orange user LED and red charge LED next to the buttons | wiki, `top_view.jpg` |

@@ -21,8 +21,8 @@ AA_W, AA_H = 51.6, 77.04
 FPC_EXIT_W, FPC_TAIL_W, FPC_LEN = 20.256, 26.0, 20.0
 ADAPTER_W, ADAPTER_H, ADAPTER_T = 20.647, 35.185, 3.0   # thickness unknown (header removed); guess
 BATT_W, BATT_H, BATT_T = 50.0, 34.0, 3.0                # 303450, lying sideways
-XIAO_W, XIAO_H, XIAO_T = 21.0, 17.8, 4.46               # underside to top of the USB-C (STEP model)
-XIAO_BODY_T = 3.25                                       # underside to top of the shield can, no USB-C (STEP; Erik estimates ~2)
+XIAO_W, XIAO_H, XIAO_T = 21.0, 17.8, 4.4                # underside to top of the USB-C (Erik measured 4.4; STEP 4.46)
+XIAO_BODY_T = 2.8                                        # underside to top of the module can, no USB-C (Erik measured 2.8; STEP 3.25)
 USB_OVERHANG, USB_W, USB_LEN = 1.5, 8.9, 7.3
 BTN_FROM_END, BTN_FROM_SIDE, BTN_W, BTN_H, BTN_TOP = 1.6, 3.0, 1.6, 2.6, 0.73  # R and B buttons (STEP): centre from USB end / long edge, size, height above the PCB
 PCB_T = 1.25
@@ -51,7 +51,9 @@ MASK = 0.5                           # the frame overlaps the active area by thi
 # XIAO mounted upside down (Erik): underside pads and wire joints face the front wall, parts face
 # the back; the USB-C sits in a notch through the back shell, so only the board body sets the depth.
 
-inner_depth = max(PANEL_T + max(BATT_T, ADAPTER_T), JOINT + XIAO_BODY_T) + 2 * CLEAR
+# The thickest stack, and deep enough that the USB-C (through the back notch) stays flush with the back face.
+inner_depth = max(max(PANEL_T + max(BATT_T, ADAPTER_T), JOINT + XIAO_BODY_T) + 2 * CLEAR,
+                  CLEAR + JOINT + XIAO_T - BACK_WALL)
 CASE_W = PANEL_W + 2 * (WALL_SIDE + CLEAR)
 CHIN_H = FOLD + XIAO_H + 2 * CLEAR + CHIN_WALL
 CASE_H = CHIN_H + PANEL_H + 2 * CLEAR + WALL_TOP
