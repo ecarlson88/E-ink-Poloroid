@@ -71,19 +71,20 @@ Remaining follow-up: PALETTE RGB values are nominal pure colors and are tuned in
 
 **Produces (the contract Task 4 calls):**
 
-- `GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <DEVICE_TOKEN>` returns `200 application/octet-stream`, a 172,800-byte frame, and header `X-Photo-Id`. It returns `204` when no photos exist and `401` for a missing or wrong token. Each call takes the next photo from a shuffle (each photo once per round, never the same twice in a row; Erik can pick the next one on the page).
+- `GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <token>` returns `200 application/octet-stream`, a 172,800-byte frame, and header `X-Photo-Id`. It returns `204` when the magnet has no photos and `401` for a missing or wrong token. Each call takes the next photo from that magnet's own shuffle (each of its photos once per round, never the same twice in a row; Erik can pick the next one on the page).
+- (Added: several magnets, see the ledger.) `POST /api/device/pair` with JSON `{"code": "ABCD-2345"}` returns `{"token", "name"}`, or `401` for an unknown, used or expired code. Codes come from the page (`POST /api/devices`, `POST /api/devices/{id}/pair-code`); one photo library, and the page chooses which photos each magnet shows (`PUT/DELETE /api/devices/{id}/photos/{photo_id}`).
 - `POST /login` (form field `password`, checked against env `UPLOAD_PASSWORD_HASH`) sets a session cookie. `POST /api/photos` (multipart `file`), `GET /api/photos` and `DELETE /api/photos/{id}` require that cookie and return `401` without it.
-- `notify_low_battery(battery_mv: int) -> None` in `notify.py` posts JSON `{"battery_mv": n}` to env `LOW_BATTERY_WEBHOOK_URL`.
-- Config comes from env: `DEVICE_TOKEN`, `UPLOAD_PASSWORD_HASH`, `SESSION_SECRET`, `LOW_BATTERY_WEBHOOK_URL`, `DATA_DIR`.
+- `notify_low_battery(battery_mv: int, magnet: str | None = None) -> None` in `notify.py` posts JSON `{"battery_mv": n, "magnet": name}` to env `LOW_BATTERY_WEBHOOK_URL`.
+- Config comes from env: `DEVICE_TOKEN` (optional: the key of a magnet from before pairing), `UPLOAD_PASSWORD_HASH`, `SESSION_SECRET`, `LOW_BATTERY_WEBHOOK_URL`, `DATA_DIR`.
 
-- [ ] **Step 5: Deploy and verify over HTTPS.** Run uvicorn (`uvicorn app:create_app --factory`) under systemd behind a TLS reverse proxy. Pass: `curl -i https://<host>/api/device/next` returns `401`; the same call with the token returns `200` and 172,800 bytes (`curl -s ... | wc -c`); plain HTTP is refused or redirected.
+- [ ] **Step 5: Deploy and verify over HTTPS.** Run uvicorn (`uvicorn app:create_app --factory`) under systemd behind a TLS reverse proxy. Pass: `curl -i https://<host>/api/device/next` returns `401`; the same call with a paired magnet's token (pair one by hand with `curl` and a code from the page) returns `200` and 172,800 bytes (`curl -s ... | wc -c`); plain HTTP is refused or redirected.
 - [ ] **Follow-up (deferred minor):** throttle failed logins on `/login`.
 
 ### Task 4: Firmware core loop
 
 Wake, join Wi-Fi, fetch, draw, sleep. Pure decisions live in `logic.c` so they can be tested on the PC; everything else is checked on the bench.
 
-**Files:** create `firmware/magnet/magnet.ino`, `epd.cpp`/`epd.h` (from Task 1's `bench.ino`), `net.cpp`/`net.h`, `logic.c`/`logic.h`, `settings.h` (`FAIL_RETRY_SECONDS` default 3600), `secrets.example.h` (`SERVER_URL`, `DEVICE_TOKEN`, dev-default `WIFI_SSID`/`WIFI_PASS`); test `firmware/test/test_logic.c` (plain C, built with `gcc`).
+**Files:** create `firmware/magnet/magnet.ino`, `epd.cpp`/`epd.h` (from Task 1's `bench.ino`), `net.cpp`/`net.h`, `logic.c`/`logic.h`, `settings.h` (`FAIL_RETRY_SECONDS` default 3600), `secrets.example.h` (`SERVER_URL`, the server's base address; dev-default `DEVICE_TOKEN`, `WIFI_SSID`/`WIFI_PASS`); test `firmware/test/test_logic.c` (plain C, built with `gcc`).
 
 **Consumes:** Task 3's `GET /api/device/next` contract; Task 1's pin map, nibble order and orientation.
 
@@ -91,7 +92,7 @@ Wake, join Wi-Fi, fetch, draw, sleep. Pure decisions live in `logic.c` so they c
 
 - `bool frame_ok(int http_status, size_t len)` and `uint32_t next_sleep_seconds(bool success, int consecutive_failures)` in `logic.h`.
 - `bool epd_show_frame(const uint8_t *frame, size_t len)` in `epd.h`: returns `false` and leaves the panel untouched unless `len == 172800`; otherwise runs reset, init, write, power on, refresh, power off, panel deep sleep.
-- `bool wifi_join(const char *ssid, const char *pass, uint32_t timeout_ms)` and `bool net_fetch_frame(uint8_t *buf, size_t cap, size_t *out_len, int bat_mv, int *http_status)` in `net.h` (Arduino port: `bool` instead of `esp_err_t`). Fetch uses HTTPS (`WiFiClientSecure` with the certificate bundle) and the bearer token; the buffer is allocated from PSRAM (check whether internal RAM suffices).
+- `bool wifi_join(const char *ssid, const char *pass, uint32_t timeout_ms)` and `bool net_fetch_frame(uint8_t *buf, size_t cap, size_t *out_len, int bat_mv, int *http_status)` in `net.h` (Arduino port: `bool` instead of `esp_err_t`). Fetch uses HTTPS (`WiFiClientSecure` with the certificate bundle) and the bearer token from NVS namespace `server`, key `token` (falls back to `secrets.h`'s `DEVICE_TOKEN` on a bench board that was never paired; with neither, the wake goes straight to setup mode); the buffer is allocated from PSRAM (check whether internal RAM suffices).
 - A consecutive-failure counter kept in NVS through `Preferences` (`wake_fail`).
 
 - [x] **Step 1: Write the failing tests** in `test_logic.c`: `frame_ok(200, 172800) == true`; `false` for `(200, 172799)`, `(200, 0)`, `(204, 0)`, `(401, 172800)`, `(500, 172800)`. `next_sleep_seconds(true, 0) == 86400`; `next_sleep_seconds(false, 1) == FAIL_RETRY_SECONDS`.
@@ -111,13 +112,13 @@ Lets the parents join their own Wi-Fi, and tells them how when the magnet cannot
 
 **Consumes:** `wake_fail` counter and `epd_show_frame` from Task 4.
 
-**Produces:** `bool should_enter_setup(int consecutive_failures)` (true at 3 or more); `boot_action_t boot_action(wake_kind_t wake, bool double_press_flag)` (Erik: a double press of the reset button opens setup mode; done and tested); `bool setup_portal_run(uint32_t timeout_s)` (starts the open hotspot `FridgeMagnet-Setup`, a catch-all DNS and an HTTP page that lists nearby networks and accepts SSID and password; saves them to NVS namespace `wifi`; returns `true` once the device has joined that network); `setup_screen_frame[172800]`, a prerendered frame reading how to connect.
+**Produces:** `bool should_enter_setup(int consecutive_failures)` (true at 3 or more); `boot_action_t boot_action(wake_kind_t wake, bool double_press_flag)` (Erik: a double press of the reset button opens setup mode; done and tested); `bool setup_portal_run(uint32_t timeout_s)` (starts the open hotspot `FridgeMagnet-Setup`, a catch-all DNS and an HTTP page that lists nearby networks and accepts SSID, password and a pairing code; saves the Wi-Fi details to NVS namespace `wifi`; once joined, if a code was typed, calls `POST /api/device/pair` and saves the returned token to NVS namespace `server`, key `token`, and shows the result (wrong or expired code, or the magnet's name) on the page; returns `true` once the device has joined that network and, if a code was given, paired. The code field may be left empty to change only Wi-Fi on a magnet already paired); `setup_screen_frame[172800]`, a prerendered frame reading how to connect.
 
 - [x] **Step 1: Write the failing tests:** `should_enter_setup(2) == false`, `should_enter_setup(3) == true`, `should_enter_setup(10) == true`.
 - [x] **Step 2: Run the host test.** Expected: FAIL. Implement `should_enter_setup`. Expected: PASS.
 - [ ] **Step 3: Generate `setup_screen.h`.** `make_setup_screen.py` draws large text with Pillow (network name `FridgeMagnet-Setup`, "press the button on the back twice with a paperclip", "then open the page that appears on your phone") and writes the packed frame through `render_frame`. Pass: the header has exactly 172,800 bytes of data.
 - [ ] **Step 4: Implement `setup_portal_run` and wire `magnet.ino`.** On the third consecutive failed wake, draw `setup_screen_frame`, open the portal for 10 minutes, then sleep 24 hours. **Erik: no separate button.** A rear pinhole reaches the XIAO's reset button. In `setup()`: map `esp_reset_reason()` to `wake_kind_t` (`ESP_RST_POWERON` → `WAKE_POWER_ON`, `ESP_RST_DEEPSLEEP` → `WAKE_DEEP_SLEEP`, else `WAKE_OTHER`), read the NVS flag `dbl_press`, and act on `boot_action`: `BOOT_ARM_DOUBLE_PRESS` sets the flag, waits `DOUBLE_PRESS_WINDOW_MS` (5 s, `settings.h`), clears it and runs the normal wake (so one press also shows a fresh photo now); `BOOT_SETUP` clears the flag and opens the portal the same way.
-- [ ] **Step 5: Verify on the bench.** Put a wrong password in NVS and set `FAIL_RETRY_SECONDS` to 30. Pass: after three failed wakes the screen shows the setup instructions; a phone joins `FridgeMagnet-Setup`, submits the right credentials, and the next wake fetches a photo. Repeat with a double press of the reset button through the pinhole instead of failures; also check that one press only refreshes the photo, and that the reset button really reports `ESP_RST_POWERON` on the XIAO (an assumption).
+- [ ] **Step 5: Verify on the bench.** Put a wrong password in NVS and set `FAIL_RETRY_SECONDS` to 30. Pass: after three failed wakes the screen shows the setup instructions; a phone joins `FridgeMagnet-Setup`, submits the right credentials, and the next wake fetches a photo. Pairing: erase NVS, add a magnet on the page, type its code in the portal; pass when the page shows it paired and it fetches a photo chosen for it; a used or expired code shows an error in the portal. Repeat with a double press of the reset button through the pinhole instead of failures; also check that one press only refreshes the photo, and that the reset button really reports `ESP_RST_POWERON` on the XIAO (an assumption).
 - [ ] **Step 6: Commit.**
 
 ### Task 6: Battery reading and low-battery cue

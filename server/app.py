@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import secrets
 import sqlite3
 import time
 from contextlib import contextmanager
@@ -52,18 +53,53 @@ def _write_atomic(path: Path, data: bytes) -> None:
     tmp.replace(path)
 
 
-def _load_queue(conn: sqlite3.Connection) -> list[int]:
-    return json.loads(conn.execute("SELECT queue FROM state WHERE id = 1").fetchone()["queue"])
+PAIR_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # no 0/O, 1/I/L: easy to type on a phone
+PAIR_CODE_LEN = 8
+PAIR_CODE_TTL = 24 * 3600
+MAX_NAME = 60
+FIRST_MAGNET_NAME = "My magnet"
 
 
-def _save_queue(conn: sqlite3.Connection, queue: list[int]) -> None:
-    conn.execute("UPDATE state SET queue = ? WHERE id = 1", (json.dumps(queue),))
+def _hash(secret: str) -> str:
+    return hashlib.sha256(secret.encode()).hexdigest()
 
 
-def _valid_queue(conn: sqlite3.Connection) -> list[int]:
-    """The saved queue without photos that have since been deleted."""
-    ids = {r["id"] for r in conn.execute("SELECT id FROM photos")}
-    return [i for i in _load_queue(conn) if i in ids]
+def _normalize_code(code: str) -> str:
+    return "".join(ch for ch in str(code).upper() if ch.isalnum())
+
+
+def _new_pair_code() -> str:
+    raw = "".join(_rng.choice(PAIR_ALPHABET) for _ in range(PAIR_CODE_LEN))
+    return f"{raw[:4]}-{raw[4:]}"
+
+
+def _clean_name(body: dict) -> str:
+    name = str(body.get("name", "")).strip() if isinstance(body, dict) else ""
+    if not name or len(name) > MAX_NAME:
+        raise HTTPException(status_code=400, detail=f"give the magnet a name of 1 to {MAX_NAME} characters")
+    return name
+
+
+# --- Each magnet's shuffle: its own queue over the photos selected for it -------------------
+
+def _selected(conn: sqlite3.Connection, device_id: int) -> list[int]:
+    return [r["photo_id"] for r in conn.execute(
+        "SELECT dp.photo_id FROM device_photos dp JOIN photos p ON p.id = dp.photo_id "
+        "WHERE dp.device_id = ? ORDER BY dp.photo_id", (device_id,))]
+
+
+def _load_queue(conn: sqlite3.Connection, device_id: int) -> list[int]:
+    return json.loads(conn.execute("SELECT queue FROM devices WHERE id = ?", (device_id,)).fetchone()["queue"])
+
+
+def _save_queue(conn: sqlite3.Connection, device_id: int, queue: list[int]) -> None:
+    conn.execute("UPDATE devices SET queue = ? WHERE id = ?", (json.dumps(queue), device_id))
+
+
+def _valid_queue(conn: sqlite3.Connection, device_id: int) -> list[int]:
+    """The saved queue without photos since deleted or taken off this magnet."""
+    ids = set(_selected(conn, device_id))
+    return [i for i in _load_queue(conn, device_id) if i in ids]
 
 
 def _new_round(ids: list[int], avoid_first: int | None) -> list[int]:
@@ -76,27 +112,25 @@ def _new_round(ids: list[int], avoid_first: int | None) -> list[int]:
     return order
 
 
-def _pick_next(conn: sqlite3.Connection) -> int | None:
-    """Take the head of the shuffle queue and make it the current photo. The
-    queue is refilled right away, so status can always say what comes next."""
-    queue = _valid_queue(conn)
+def _pick_next(conn: sqlite3.Connection, device_id: int) -> int | None:
+    """Take the head of this magnet's shuffle and make it its current photo. The queue
+    is refilled right away, so the page can always say what comes next."""
+    queue = _valid_queue(conn, device_id)
     if not queue:
-        ids = [r["id"] for r in conn.execute("SELECT id FROM photos")]
-        current = conn.execute("SELECT current_id FROM state WHERE id = 1").fetchone()["current_id"]
-        queue = _new_round(ids, current)
+        current = conn.execute("SELECT current_id FROM devices WHERE id = ?", (device_id,)).fetchone()["current_id"]
+        queue = _new_round(_selected(conn, device_id), current)
     if not queue:
         return None
     photo_id, queue = queue[0], queue[1:]
     if not queue:
-        ids = [r["id"] for r in conn.execute("SELECT id FROM photos")]
-        queue = _new_round(ids, photo_id)
-    _save_queue(conn, queue)
-    conn.execute("UPDATE state SET current_id = ? WHERE id = 1", (photo_id,))
+        queue = _new_round(_selected(conn, device_id), photo_id)
+    _save_queue(conn, device_id, queue)
+    conn.execute("UPDATE devices SET current_id = ? WHERE id = ?", (photo_id, device_id))
     return photo_id
 
 
 def create_app() -> FastAPI:
-    device_token = os.environ["DEVICE_TOKEN"]
+    legacy_token = os.environ.get("DEVICE_TOKEN")   # the first magnet's key, from before pairing existed
     password_hash = os.environ["UPLOAD_PASSWORD_HASH"]
     data_dir = Path(os.environ.get("DATA_DIR", "data"))
     frames_dir = data_dir / "frames"
@@ -136,6 +170,25 @@ def create_app() -> FastAPI:
                 render_key TEXT
             );
             INSERT OR IGNORE INTO state (id) VALUES (1);
+            CREATE TABLE IF NOT EXISTS devices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                created_at REAL NOT NULL,
+                token_hash TEXT UNIQUE,
+                pair_code_hash TEXT,
+                pair_expires REAL,
+                queue TEXT NOT NULL DEFAULT '[]',
+                current_id INTEGER,
+                last_seen REAL,
+                battery_mv INTEGER,
+                low_streak INTEGER NOT NULL DEFAULT 0,
+                alerted INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS device_photos (
+                device_id INTEGER NOT NULL,
+                photo_id INTEGER NOT NULL,
+                PRIMARY KEY (device_id, photo_id)
+            );
             """
         )
         # Databases made before crops existed: add the columns.
@@ -143,6 +196,20 @@ def create_app() -> FastAPI:
         for col, kind in (("width", "INTEGER"), ("height", "INTEGER"), ("crop", "TEXT")):
             if col not in have:
                 conn.execute(f"ALTER TABLE photos ADD COLUMN {col} {kind}")
+        if "first_magnet_made" not in {r["name"] for r in conn.execute("PRAGMA table_info(state)")}:
+            conn.execute("ALTER TABLE state ADD COLUMN first_magnet_made INTEGER NOT NULL DEFAULT 0")
+        # Before pairing existed there was one magnet, keyed by DEVICE_TOKEN, showing every photo.
+        # Make it the first magnet once, with its photos, shuffle and status, so nothing re-pairs.
+        st = conn.execute("SELECT * FROM state WHERE id = 1").fetchone()
+        no_devices = conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0] == 0
+        if legacy_token and no_devices and not st["first_magnet_made"]:
+            cur = conn.execute(
+                "INSERT INTO devices (name, created_at, token_hash, queue, current_id, last_seen, battery_mv,"
+                " low_streak, alerted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (FIRST_MAGNET_NAME, time.time(), _hash(legacy_token), st["queue"], st["current_id"],
+                 st["last_seen"], st["battery_mv"], st["low_streak"], st["alerted"]))
+            conn.execute("INSERT INTO device_photos (device_id, photo_id) SELECT ?, id FROM photos", (cur.lastrowid,))
+            conn.execute("UPDATE state SET first_magnet_made = 1 WHERE id = 1")
 
     rerender_if_settings_changed(db, frames_dir, originals_dir)
 
@@ -159,11 +226,27 @@ def create_app() -> FastAPI:
         if not request.session.get("auth"):
             raise HTTPException(status_code=401, detail="login required")
 
-    def require_device(request: Request) -> None:
+    def require_device(request: Request) -> sqlite3.Row:
+        """The magnet making the request, found by its key (stored only as a hash)."""
         header = request.headers.get("Authorization", "")
         scheme, _, token = header.partition(" ")
-        if scheme.lower() != "bearer" or not hmac.compare_digest(token, device_token):
+        if scheme.lower() != "bearer" or not token:
             raise HTTPException(status_code=401, detail="bad device token")
+        with db() as conn:
+            row = conn.execute("SELECT id, name FROM devices WHERE token_hash = ?", (_hash(token),)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=401, detail="bad device token")
+        return row
+
+    def device_or_404(conn: sqlite3.Connection, device_id: int) -> sqlite3.Row:
+        row = conn.execute("SELECT * FROM devices WHERE id = ?", (device_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="no such magnet")
+        return row
+
+    def photo_or_404(conn: sqlite3.Connection, photo_id: int) -> None:
+        if conn.execute("SELECT 1 FROM photos WHERE id = ?", (photo_id,)).fetchone() is None:
+            raise HTTPException(status_code=404, detail="no such photo")
 
     @app.get("/")
     def index() -> FileResponse:
@@ -210,10 +293,7 @@ def create_app() -> FastAPI:
                 original.unlink(missing_ok=True)
                 frame_path.unlink(missing_ok=True)
                 raise
-            queue = _load_queue(conn)
-            queue.insert(_rng.randint(0, len(queue)), photo_id)
-            _save_queue(conn, queue)
-        return {"id": photo_id}
+        return {"id": photo_id}   # in the library only: choose its magnets on the page
 
     @app.get("/api/photos", dependencies=[Depends(require_login)])
     def list_photos() -> list[dict]:
@@ -247,38 +327,35 @@ def create_app() -> FastAPI:
     def delete_photo(photo_id: int) -> dict:
         with db() as conn:
             conn.execute("DELETE FROM photos WHERE id = ?", (photo_id,))
-            _save_queue(conn, [i for i in _load_queue(conn) if i != photo_id])
-            conn.execute("UPDATE state SET current_id = NULL WHERE id = 1 AND current_id = ?",
-                         (photo_id,))
+            conn.execute("DELETE FROM device_photos WHERE photo_id = ?", (photo_id,))
+            conn.execute("UPDATE devices SET current_id = NULL WHERE current_id = ?", (photo_id,))
         (frames_dir / f"{photo_id}.bin").unlink(missing_ok=True)
         (originals_dir / str(photo_id)).unlink(missing_ok=True)
         return {"ok": True}
 
-    def record_battery(conn: sqlite3.Connection, bat_mv: int) -> int | None:
-        """Update the low-battery streak; return mV to alert about, if any."""
-        state = conn.execute("SELECT low_streak, alerted FROM state WHERE id = 1").fetchone()
+    def record_battery(conn: sqlite3.Connection, device_id: int, bat_mv: int) -> int | None:
+        """Update this magnet's low-battery streak; return mV to alert about, if any."""
+        st = conn.execute("SELECT low_streak, alerted FROM devices WHERE id = ?", (device_id,)).fetchone()
         if bat_mv < LOW_BATTERY_MV:
-            streak = state["low_streak"] + 1
-            alert = streak >= 2 and not state["alerted"]
-            conn.execute(
-                "UPDATE state SET low_streak = ?, alerted = ? WHERE id = 1",
-                (streak, 1 if (alert or state["alerted"]) else 0),
-            )
+            streak = st["low_streak"] + 1
+            alert = streak >= 2 and not st["alerted"]
+            conn.execute("UPDATE devices SET low_streak = ?, alerted = ? WHERE id = ?",
+                         (streak, 1 if (alert or st["alerted"]) else 0, device_id))
             return bat_mv if alert else None
-        conn.execute("UPDATE state SET low_streak = 0, alerted = 0 WHERE id = 1")
+        conn.execute("UPDATE devices SET low_streak = 0, alerted = 0 WHERE id = ?", (device_id,))
         return None
 
-    @app.get("/api/device/next", dependencies=[Depends(require_device)])
-    def device_next(bat_mv: int | None = None) -> Response:
+    @app.get("/api/device/next")
+    def device_next(bat_mv: int | None = None, device: sqlite3.Row = Depends(require_device)) -> Response:
         alert_mv = None
         with db() as conn:
-            conn.execute("UPDATE state SET last_seen = ? WHERE id = 1", (time.time(),))
+            conn.execute("UPDATE devices SET last_seen = ? WHERE id = ?", (time.time(), device["id"]))
             if bat_mv is not None:
-                conn.execute("UPDATE state SET battery_mv = ? WHERE id = 1", (bat_mv,))
-                alert_mv = record_battery(conn, bat_mv)
-            photo_id = _pick_next(conn)
+                conn.execute("UPDATE devices SET battery_mv = ? WHERE id = ?", (bat_mv, device["id"]))
+                alert_mv = record_battery(conn, device["id"], bat_mv)
+            photo_id = _pick_next(conn, device["id"])
         if alert_mv is not None:
-            notify.notify_low_battery(alert_mv)
+            notify.notify_low_battery(alert_mv, magnet=device["name"])
         if photo_id is None:
             return Response(status_code=204)
         frame = (frames_dir / f"{photo_id}.bin").read_bytes()
@@ -287,28 +364,112 @@ def create_app() -> FastAPI:
         return Response(frame, media_type="application/octet-stream",
                         headers={"X-Photo-Id": str(photo_id), "Cache-Control": "no-store"})
 
-    @app.post("/api/photos/{photo_id}/next", dependencies=[Depends(require_login)])
-    def show_next(photo_id: int) -> dict:
+    @app.post("/api/device/pair")
+    def device_pair(body: dict) -> dict:
+        """A magnet trades the one-time pairing code (typed into its setup page) for its own
+        long-term key. The code works once and expires after PAIR_CODE_TTL."""
+        code = _normalize_code(body.get("code", "")) if isinstance(body, dict) else ""
+        token = secrets.token_urlsafe(32)
         with db() as conn:
-            if conn.execute("SELECT 1 FROM photos WHERE id = ?", (photo_id,)).fetchone() is None:
-                raise HTTPException(status_code=404, detail="no such photo")
-            _save_queue(conn, [photo_id] + [i for i in _load_queue(conn) if i != photo_id])
+            row = conn.execute("SELECT id, name, pair_expires FROM devices WHERE pair_code_hash = ?",
+                               (_hash(code),)).fetchone() if code else None
+            if row is None or row["pair_expires"] is None or row["pair_expires"] < time.time():
+                raise HTTPException(status_code=401, detail="unknown or expired pairing code")
+            conn.execute("UPDATE devices SET token_hash = ?, pair_code_hash = NULL, pair_expires = NULL WHERE id = ?",
+                         (_hash(token), row["id"]))
+        return {"token": token, "name": row["name"]}
+
+    # --- Magnets on the page --------------------------------------------------------------
+
+    def describe(conn: sqlite3.Connection, d: sqlite3.Row) -> dict:
+        queue = _valid_queue(conn, d["id"])
+        bat = d["battery_mv"]
+        pending = d["pair_code_hash"] is not None and d["pair_expires"] and d["pair_expires"] > time.time()
+        return {
+            "id": d["id"], "name": d["name"], "paired": d["token_hash"] is not None,
+            "pairing_expires": d["pair_expires"] if pending else None,
+            "last_seen": d["last_seen"], "battery_mv": bat,
+            "battery_low": bat is not None and bat < LOW_BATTERY_MV,
+            "current_id": d["current_id"], "next_id": queue[0] if queue else None,
+            "photo_ids": _selected(conn, d["id"]),
+        }
+
+    def set_pair_code(conn: sqlite3.Connection, device_id: int) -> dict:
+        code, expires = _new_pair_code(), time.time() + PAIR_CODE_TTL
+        conn.execute("UPDATE devices SET pair_code_hash = ?, pair_expires = ? WHERE id = ?",
+                     (_hash(_normalize_code(code)), expires, device_id))
+        return {"pair_code": code, "pair_expires": expires}
+
+    @app.get("/api/devices", dependencies=[Depends(require_login)])
+    def list_devices() -> list[dict]:
+        with db() as conn:
+            return [describe(conn, d) for d in conn.execute("SELECT * FROM devices ORDER BY id").fetchall()]
+
+    @app.post("/api/devices", dependencies=[Depends(require_login)])
+    def add_device(body: dict) -> dict:
+        """Add a magnet; returns its pairing code (shown once: only a hash is kept)."""
+        name = _clean_name(body)
+        with db() as conn:
+            device_id = conn.execute("INSERT INTO devices (name, created_at) VALUES (?, ?)",
+                                     (name, time.time())).lastrowid
+            return {"id": device_id, "name": name, **set_pair_code(conn, device_id)}
+
+    @app.patch("/api/devices/{device_id}", dependencies=[Depends(require_login)])
+    def rename_device(device_id: int, body: dict) -> dict:
+        name = _clean_name(body)
+        with db() as conn:
+            device_or_404(conn, device_id)
+            conn.execute("UPDATE devices SET name = ? WHERE id = ?", (name, device_id))
         return {"ok": True}
 
-    @app.get("/api/status", dependencies=[Depends(require_login)])
-    def status() -> dict:
+    @app.delete("/api/devices/{device_id}", dependencies=[Depends(require_login)])
+    def remove_device(device_id: int) -> dict:
+        """Remove a magnet: its key stops working at once. The photos stay in the library."""
         with db() as conn:
-            st = conn.execute(
-                "SELECT last_seen, battery_mv, current_id FROM state WHERE id = 1").fetchone()
-            queue = _valid_queue(conn)
-        bat = st["battery_mv"]
-        return {
-            "last_seen": st["last_seen"],
-            "battery_mv": bat,
-            "battery_low": bat is not None and bat < LOW_BATTERY_MV,
-            "current_id": st["current_id"],
-            "next_id": queue[0] if queue else None,
-        }
+            device_or_404(conn, device_id)
+            conn.execute("DELETE FROM devices WHERE id = ?", (device_id,))
+            conn.execute("DELETE FROM device_photos WHERE device_id = ?", (device_id,))
+        return {"ok": True}
+
+    @app.post("/api/devices/{device_id}/pair-code", dependencies=[Depends(require_login)])
+    def new_pair_code(device_id: int) -> dict:
+        """A new pairing code (a replacement magnet, or a lost code). The magnet's current key
+        keeps working until the new code is used, then it is replaced."""
+        with db() as conn:
+            device_or_404(conn, device_id)
+            return set_pair_code(conn, device_id)
+
+    @app.put("/api/devices/{device_id}/photos/{photo_id}", dependencies=[Depends(require_login)])
+    def select_photo(device_id: int, photo_id: int) -> dict:
+        """Put a library photo on a magnet; it joins that magnet's current round."""
+        with db() as conn:
+            device_or_404(conn, device_id)
+            photo_or_404(conn, photo_id)
+            added = conn.execute("INSERT OR IGNORE INTO device_photos (device_id, photo_id) VALUES (?, ?)",
+                                 (device_id, photo_id)).rowcount
+            if added:
+                queue = _valid_queue(conn, device_id)
+                queue.insert(_rng.randint(0, len(queue)), photo_id)
+                _save_queue(conn, device_id, queue)
+        return {"ok": True}
+
+    @app.delete("/api/devices/{device_id}/photos/{photo_id}", dependencies=[Depends(require_login)])
+    def unselect_photo(device_id: int, photo_id: int) -> dict:
+        with db() as conn:
+            device_or_404(conn, device_id)
+            conn.execute("DELETE FROM device_photos WHERE device_id = ? AND photo_id = ?", (device_id, photo_id))
+        return {"ok": True}
+
+    @app.post("/api/devices/{device_id}/photos/{photo_id}/next", dependencies=[Depends(require_login)])
+    def show_next(device_id: int, photo_id: int) -> dict:
+        """Make this photo the magnet's next one."""
+        with db() as conn:
+            device_or_404(conn, device_id)
+            photo_or_404(conn, photo_id)
+            if photo_id not in _selected(conn, device_id):
+                raise HTTPException(status_code=409, detail="that photo is not on this magnet")
+            _save_queue(conn, device_id, [photo_id] + [i for i in _valid_queue(conn, device_id) if i != photo_id])
+        return {"ok": True}
 
     @app.get("/api/photos/{photo_id}/image", dependencies=[Depends(require_login)])
     def photo_image(photo_id: int, view: Literal["original", "photo", "panel"]) -> Response:
