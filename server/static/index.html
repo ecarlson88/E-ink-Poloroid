@@ -65,7 +65,9 @@
   .chin button { border: none; background: none; font-size: 13px; font-weight: 600; min-height: 44px; padding: 0 2px; }
   .chin button.on { color: var(--accent); cursor: default; }
   .empty { margin-top: 28px; text-align: center; color: var(--muted); }
-  .chin .acts { display: flex; gap: 10px; }
+  .chin { flex-wrap: wrap; column-gap: 8px; }
+  .chin .date, .chin button { white-space: nowrap; }
+  .chin .acts { display: flex; gap: 12px; margin-left: auto; }
 
   /* Crop editor */
   dialog#cropper { border: none; border-radius: 14px; padding: 16px; max-width: min(560px, calc(100vw - 24px)); width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
