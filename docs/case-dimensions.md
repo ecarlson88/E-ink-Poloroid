@@ -44,7 +44,7 @@ The header and its plastic strip (about 2.5 thick) are likely the thickest part 
 | USB-C connector | on a short edge, about 8.9 wide x 4.2 tall, **sticks out ~1.5 past the board edge** | STEP model, `top_view.jpg` |
 | Buttons | **R** (reset) and **B** (boot), tiny side-by-side buttons on the top face, either side of the USB-C | `top_view.jpg` |
 | LEDs | orange user LED and red charge LED next to the buttons | wiki, `top_view.jpg` |
-| Antenna | **external rod antenna** on a U.FL socket in the corner opposite the USB-C, top side; antenna included; its size is not stated | wiki, product page, `top_view.jpg` |
+| Antenna | **external FPC antenna** on an I-PEX 1 (U.FL) socket in the corner opposite the USB-C, top side: a **37.4 x 17.5 mm** flat radiator on a **65 mm, 1.13 mm coax** (Seeed, via Erik). The product page calls it a rod antenna | Seeed, wiki, `top_view.jpg` |
 | Battery pads | **underside**, near the middle of one long edge: "BAT +/−", **− nearer the USB end** | `underside_pads.png` (from the DXF), wiki text |
 | Underside | flat apart from pads ("no components on the back") | product page |
 | Charge current | **110 mA** per the v1.4 schematic (ICharge = 24000/220K); wiki and product page say 50 mA | `XIAO_ESP32S3_v1.4_schematic.pdf` |
