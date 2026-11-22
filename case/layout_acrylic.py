@@ -29,9 +29,11 @@ USB_OVERHANG, USB_W, USB_LEN = 1.5, 8.9, 7.3
 BTN_FROM_END, BTN_FROM_SIDE = 1.6, 3.0
 SW_W, SW_D, SW_T = 3.5, 2.9, 1.6        # side-actuated switch: placeholder until the part is chosen
 PLUNGER_W, PLUNGER_H = 1.6, 1.0         # plunger slot through the bottom wall (placeholder)
+ANT_L, ANT_H, ANT_T = 44.0, 4.5, 0.2    # Cdebyte TX2400-FPC-4405 (listing specs; check the datasheet), with its tape
 # Choices
 SHEET_T, MASK_T = 1.0, 0.1              # acrylic sheet; vinyl mask on its back
 WALL, BACK_WALL, CLEAR, FOLD, MASK = 1.2, 1.0, 0.3, 2.0, 0.5
+CHIN_WALL = 1.0                         # bottom wall: 1.0 so the antenna clears the cable fold (ledger)
 PIC_RATIO = 4 / 3
 XIAO_GAP = 0.65                         # Ruling: 0.75 less the mask's 0.1; joint room stays 0.45
 JOINT = 0.45                            # battery wire joints on the XIAO's pads (as compact)
@@ -80,10 +82,13 @@ batt = (panel_x + (PANEL_W - BATT_W) / 2, adapter[1] + ADAPTER_H + BATT_GAP, BAT
 inner_top = CASE_H - WALL
 
 # Edge switch, its backstop rib, the chin ledge and the left cross rib
-switch = (SW_X - SW_W / 2, WALL, SW_W, SW_D)
-backstop = (SW_X - SW_W / 2 - 1.0, WALL + SW_D, SW_W + 2.0, RIB_T)
+switch = (SW_X - SW_W / 2, CHIN_WALL, SW_W, SW_D)
+backstop = (SW_X - SW_W / 2 - 1.0, CHIN_WALL + SW_D, SW_W + 2.0, RIB_T)
 ledge_top = panel_y - FOLD - CLEAR
-ledge = (WALL, WALL, CASE_W - 2 * WALL, ledge_top - WALL)
+ledge = (WALL, CHIN_WALL, CASE_W - 2 * WALL, ledge_top - CHIN_WALL)
+# Antenna (Erik: option A): stuck to the back of the ledge, left of the USB-C notch, against the bottom wall
+ant = (WALL + CLEAR, CHIN_WALL, ANT_L, ANT_H)
+z_ant = SHEET_T + LEDGE_T                            # its front face
 rib = (WALL, panel_y - CLEAR - RIB_T, CASE_W / 2 - RIB_GAP / 2 - WALL, RIB_T)
 
 # Magnet bars: six on the left from above the chin; on the right, above the XIAO
@@ -122,6 +127,11 @@ for b in bars:
         assert batt_back_gap >= MAG_PROUD + CLEAR - 1e-9, "magnet pad under the battery without depth to spare"
 assert batt[1] + BATT_H <= inner_top - CLEAR + 1e-9, "battery hits the top wall"
 assert rib[0] + rib[2] <= fold[0] - CLEAR, "rib hits the cable fold"
+assert ant[0] + ant[2] <= notch[0] - CLEAR + 1e-9, "antenna runs into the USB-C notch"
+assert ant[1] + ant[3] <= fold[1] + 1e-9, "antenna overlaps the cable fold"
+assert not overlap(ant, rib), "antenna hits the cross rib"
+assert z_ant + ANT_T <= z_pads - JOINT - JOINT_CLEAR + 1e-9, "antenna hits the XIAO joints"
+assert z_ant + ANT_T <= z_back_in - SW_T - CLEAR, "antenna hits the switch"
 assert not overlap(xiao, adapter, CLEAR), "XIAO hits the adapter"
 
 # Drawing
@@ -157,7 +167,8 @@ ax.annotate("USB-C, flush in a\nback-wall notch", (usb[0] + USB_W / 2, 0), (usb[
 ax.add_patch(Circle(pin, PIN_D / 2, fc="white", ec=INK))
 ax.annotate("rear reset pinhole", pin, (CASE_W + 1, 10), fontsize=7, color=INK, arrowprops=dict(arrowstyle="-", color=INK, lw=0.7))
 box(ax, ledge, None, color=PURPLE, ls=":", fill="#EADCF3", alpha=0.45)
-ax.text(24, WALL + 0.4, f"chin ledge under the sheet ({ledge[3]:.1f} x {LEDGE_T:g}): tape area", fontsize=6, color=PURPLE)
+box(ax, ant, None, color=PURPLE, ls="--")
+ax.text(ant[0] + 16, ant[1] + ant[3] / 2, f"antenna {ANT_L:g} x {ANT_H:g} on the back of the chin ledge", va="center", fontsize=6, color=PURPLE)
 box(ax, switch, None, color=INK, fill="#C9CDD3")
 box(ax, backstop, None, color=INK, fill="#8E949C")
 ax.add_patch(Rectangle((SW_X - PLUNGER_W / 2, 0), PLUNGER_W, WALL, fc="white", ec=INK))
@@ -180,7 +191,7 @@ a.add_patch(Rectangle((0, 0), T, CASE_H, fc="#FFFFFF", ec=INK, lw=2))
 box(a, (0, 0, SHEET_T, CASE_H), None, color=BLUE, fill="#E4EEF9")
 box(a, (SHEET_T, 0, MASK_T, CASE_H), None, color=MUTED, fill="#FFFFFF")
 box(a, (SHEET_T + MASK_T, panel_y, PANEL_T, PANEL_H), color=MUTED, fill="#DCE6F2")
-box(a, (SHEET_T, WALL, LEDGE_T, ledge[3]), None, color=PURPLE, fill="#EADCF3")
+box(a, (SHEET_T, CHIN_WALL, LEDGE_T, ledge[3]), None, color=PURPLE, fill="#EADCF3")
 box(a, (z_pads, xiao_y0, XIAO_BODY_T, XIAO_L), color=GREEN, fill="#D6EEDD")
 box(a, (z_pads, 0, XIAO_T, USB_LEN), color=GREEN, fill="#7FBF94")
 a.add_patch(Rectangle((T - BACK_WALL - 0.01, -0.01), BACK_WALL + 0.02, USB_LEN + CLEAR, fc="white", ec="none"))
@@ -207,4 +218,5 @@ print(f"switch centre x {SW_X:g}, body {SW_W:g} x {SW_D:g} x {SW_T:g}; ledge {le
       f"room under it for joints {ledge_room:.2f}")
 print(f"battery-to-back-wall gap {batt_back_gap:.2f} (bosses stand {MAG_PROUD:g} proud); battery top {batt[1] + BATT_H:.2f} "
       f"vs inner top {inner_top:.2f}; magnet bars: {sum(b[0] < CASE_W / 2 for b in bars)} left, {sum(b[0] > CASE_W / 2 for b in bars)} right")
+print(f"antenna x {ant[0]:.1f}..{ant[0] + ant[2]:.1f} (notch at {notch[0]:.2f}), y {ant[1]:.1f}..{ant[1] + ant[3]:.1f} (cable fold from {fold[1]:.1f}), front face {z_ant:.1f} from the front, {T - z_ant - ANT_T:.2f} from the back face; lowest left magnet {panel_y + 1.0 - ant[1] - ant[3]:.1f} above it")
 print(f"wrote {out}")
