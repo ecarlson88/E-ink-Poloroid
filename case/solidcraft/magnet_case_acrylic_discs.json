@@ -1,0 +1,1293 @@
+[
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PanelW",
+   "expression": "58 mm",
+   "comment": "panel outline width"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PanelH",
+   "expression": "85.64 mm",
+   "comment": "panel outline height"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PanelT",
+   "expression": "1 mm",
+   "comment": "panel thickness (datasheet 0.85-0.9)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AAW",
+   "expression": "51.6 mm",
+   "comment": "active area width (drawing; the table says 50.4: measure)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AAH",
+   "expression": "77.04 mm",
+   "comment": "active area height (drawing; the table says 75.6: measure)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AALeft",
+   "expression": "3.2 mm",
+   "comment": "panel left edge to active area"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AATop",
+   "expression": "2.55 mm",
+   "comment": "panel top edge to active area"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "FpcLen",
+   "expression": "20 mm",
+   "comment": "panel cable length beyond the panel edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AdapterW",
+   "expression": "20.647 mm",
+   "comment": "DESPI-E01 width"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AdapterH",
+   "expression": "35.185 mm",
+   "comment": "DESPI-E01 length"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AdapterT",
+   "expression": "3 mm",
+   "comment": "adapter thickness with the header removed (guess: measure)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BattT",
+   "expression": "3 mm",
+   "comment": "303450 battery thickness"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoW",
+   "expression": "21 mm",
+   "comment": "XIAO ESP32-S3 length"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoH",
+   "expression": "17.8 mm",
+   "comment": "XIAO ESP32-S3 width"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoBodyT",
+   "expression": "2.8 mm",
+   "comment": "XIAO height without the USB-C (Erik measured 2.8; STEP model said 3.25)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoT",
+   "expression": "4.4 mm",
+   "comment": "XIAO height to the top of the USB-C (Erik measured 4.4; STEP model said 4.46)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "UsbOver",
+   "expression": "1.5 mm",
+   "comment": "USB-C overhang past the XIAO edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "UsbW",
+   "expression": "8.9 mm",
+   "comment": "USB-C receptacle width"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "UsbLen",
+   "expression": "7.3 mm",
+   "comment": "USB-C receptacle length including the overhang"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BtnFromEnd",
+   "expression": "1.6 mm",
+   "comment": "XIAO button centre from the USB-C end of the board"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BtnFromSide",
+   "expression": "3 mm",
+   "comment": "XIAO button centre from a long edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "MagD",
+   "expression": "8 mm",
+   "comment": "magnet disc diameter"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "MagT",
+   "expression": "0.6 mm",
+   "comment": "magnet disc thickness (Erik measured 0.6)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Clear",
+   "expression": "0.3 mm",
+   "comment": "gap around parts"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SheetT",
+   "expression": "1 mm",
+   "comment": "front sheet: 1 mm acrylic (glass-ready: flat, no holes)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "MaskT",
+   "expression": "0.1 mm",
+   "comment": "white vinyl mask on the back of the sheet"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoGap",
+   "expression": "0.65 mm",
+   "comment": "panel back to the XIAO's underside: 0.45 joints + 0.2 clearance (the mask took 0.1)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Fold",
+   "expression": "2 mm",
+   "comment": "room under the panel for the cable fold"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "ChinWall",
+   "expression": "1 mm",
+   "comment": "bottom wall: 1.0 so the slim antenna clears the cable fold (ledger)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Wall",
+   "expression": "1.2 mm",
+   "comment": "back shell side wall"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "CornerR",
+   "expression": "4 mm",
+   "comment": "outer corner radius"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Mask",
+   "expression": "0.5 mm",
+   "comment": "frame overlap onto the active area, per side"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PicRatio",
+   "expression": "4 / 3",
+   "unit": "",
+   "comment": "picture height / width (Erik: 3:4; 1 = square, 1.5 = full screen)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PinD",
+   "expression": "1.2 mm",
+   "comment": "pinhole for a paperclip"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "MagSkin",
+   "expression": "0.4 mm",
+   "comment": "plastic between magnet and fridge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "MagGap",
+   "expression": "0.2 mm",
+   "comment": "magnet pocket oversize"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BackWall",
+   "expression": "MagSkin + MagT",
+   "comment": "back wall thickness: exactly skin + magnet, so the pockets are flush inside"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RibT",
+   "expression": "1.2 mm",
+   "comment": "cross rib thickness (under the panel's bottom edge)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RibGap",
+   "expression": "30 mm",
+   "comment": "centre gap in the cross ribs for the panel cable and wires"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "BackR",
+   "expression": "0.8 mm",
+   "comment": "fillet on the back face's outer edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RimR",
+   "expression": "0.3 mm",
+   "comment": "fillet on the tray's top outer edge, under the sheet's edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "CaseW",
+   "expression": "PanelW + 2 * (Clear + Wall)",
+   "comment": "overall width (no frame: the mask covers the panel border)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PanelY",
+   "expression": "max(UsbLen + Clear, ChinWall + Fold + Clear)",
+   "comment": "panel bottom edge: just above the USB-C body"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "CaseH",
+   "expression": "PanelY + PanelH + Clear + Wall",
+   "comment": "overall height"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Joint",
+   "expression": "XiaoGap - Clear",
+   "comment": "room left for the battery wire joints on the XIAO's underside pads"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "InnerD",
+   "expression": "max(max(MaskT + PanelT + max(BattT, AdapterT) + 2 * Clear, MaskT + PanelT + XiaoGap + XiaoBodyT + Clear), MaskT + PanelT + XiaoGap + XiaoT - BackWall)",
+   "comment": "inside depth: panel + battery, panel + XIAO, or deep enough that the USB-C ends flush with the back face"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "ShellH",
+   "expression": "BackWall + InnerD",
+   "comment": "back shell height; the front frame sits on it"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PanelX",
+   "expression": "Wall + Clear",
+   "comment": "panel left edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "WinX",
+   "expression": "PanelX + AALeft + Mask",
+   "comment": "window left"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "WinY",
+   "expression": "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask) * PicRatio",
+   "comment": "window bottom (the picture sits at the top of the panel)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "WinW",
+   "expression": "AAW - 2 * Mask",
+   "comment": "window width"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "WinH",
+   "expression": "WinW * PicRatio",
+   "comment": "window height"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoX",
+   "expression": "CaseW - Wall - Clear - XiaoH",
+   "comment": "XIAO left edge (upright, at the right)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoY",
+   "expression": "UsbOver",
+   "comment": "XIAO bottom edge (USB-C face flush with the bottom edge)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "UsbCX",
+   "expression": "XiaoX + XiaoH / 2",
+   "comment": "USB-C centre x"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "RibY",
+   "expression": "PanelY - Clear - RibT",
+   "comment": "cross rib bottom edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PinX",
+   "expression": "XiaoX + XiaoH - BtnFromSide",
+   "comment": "rear pinhole x (mounting A mirrors the buttons: check which one is reset)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PinY",
+   "expression": "XiaoY + BtnFromEnd",
+   "comment": "front pinhole y"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "AdapterY",
+   "expression": "PanelY + FpcLen - Fold - 3 mm",
+   "comment": "adapter bottom edge (folded cable end)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SwX",
+   "expression": "12 mm",
+   "comment": "setup switch centre x (left of the XIAO)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SwW",
+   "expression": "3.5 mm",
+   "comment": "setup switch body width (placeholder until the part is chosen)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SwD",
+   "expression": "2.9 mm",
+   "comment": "setup switch body depth, from the bottom wall inward (placeholder)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "SwT",
+   "expression": "1.6 mm",
+   "comment": "setup switch body height, from the back wall (placeholder)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PlungerW",
+   "expression": "1.6 mm",
+   "comment": "plunger slot width through the bottom wall (placeholder)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "PlungerH",
+   "expression": "1 mm",
+   "comment": "plunger slot height (placeholder)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "LedgeT",
+   "expression": "0.8 mm",
+   "comment": "chin ledge under the sheet: tape area; the antenna sticks to its back"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "LedgeTop",
+   "expression": "PanelY - Fold - Clear",
+   "comment": "top of the chin ledge (clear of the panel cable fold)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscInset",
+   "expression": "Wall + 1 mm + MagD / 2",
+   "comment": "disc centre from the outer side"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscLowY",
+   "expression": "PanelY + 1 mm + MagD / 2",
+   "comment": "lower disc row (just above the chin)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscTopY",
+   "expression": "CaseH - CornerR - 1 mm - MagD / 2",
+   "comment": "upper disc row (below the rounded corners)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscMidY",
+   "expression": "(DiscLowY + DiscTopY) / 2",
+   "comment": "middle disc row"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscLowYR",
+   "expression": "XiaoY + XiaoW + Clear + 1 mm + MagD / 2",
+   "comment": "lower right disc (above the XIAO)"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "name": "ShellOutline"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     "CaseW",
+     0
+    ],
+    [
+     "CaseW",
+     "CaseH"
+    ],
+    [
+     0,
+     "CaseH"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.fillet",
+  "params": {
+   "points": [
+    "l1.start",
+    "l1.end",
+    "l2.end",
+    "l3.end"
+   ],
+   "radius": "CornerR"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "ShellH",
+   "name": "Shell",
+   "body_name": "Tray"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "ShellH",
+   "name": "Cavity"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "Wall",
+     "ChinWall"
+    ],
+    [
+     "CaseW - Wall",
+     "ChinWall"
+    ],
+    [
+     "CaseW - Wall",
+     "CaseH - Wall"
+    ],
+    [
+     "Wall",
+     "CaseH - Wall"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.fillet",
+  "params": {
+   "points": [
+    "l1.start",
+    "l1.end",
+    "l2.end",
+    "l3.end"
+   ],
+   "radius": "CornerR - Wall"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "InnerD",
+   "direction": "negative",
+   "operation": "cut",
+   "targets": [
+    "Tray"
+   ],
+   "name": "Hollow"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BackWall",
+   "name": "MagnetPockets"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "DiscInset",
+    "DiscLowY"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c1"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "CaseW - DiscInset",
+    "DiscLowYR"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c2"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "DiscInset",
+    "DiscMidY"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c3"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "CaseW - DiscInset",
+    "DiscMidY"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c4"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "DiscInset",
+    "DiscTopY"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c5"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "CaseW - DiscInset",
+    "DiscTopY"
+   ],
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c6"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "MagT",
+   "direction": "negative",
+   "operation": "cut",
+   "targets": [
+    "Tray"
+   ],
+   "name": "Pockets"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BackWall",
+   "name": "CrossRibs"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "Wall - 0.5 mm",
+     "RibY"
+    ],
+    [
+     "CaseW / 2 - RibGap / 2",
+     "RibY"
+    ],
+    [
+     "CaseW / 2 - RibGap / 2",
+     "RibY + RibT"
+    ],
+    [
+     "Wall - 0.5 mm",
+     "RibY + RibT"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "InnerD",
+   "operation": "join",
+   "targets": [
+    "Tray"
+   ],
+   "name": "Ribs"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "ShellH - LedgeT",
+   "name": "ChinLedge"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "CornerR",
+     "ChinWall - 0.3 mm"
+    ],
+    [
+     "CaseW - CornerR",
+     "ChinWall - 0.3 mm"
+    ],
+    [
+     "CaseW - Wall + 0.3 mm",
+     "ChinWall + CornerR - Wall"
+    ],
+    [
+     "CaseW - Wall + 0.3 mm",
+     "LedgeTop"
+    ],
+    [
+     "Wall - 0.3 mm",
+     "LedgeTop"
+    ],
+    [
+     "Wall - 0.3 mm",
+     "ChinWall + CornerR - Wall"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "LedgeT",
+   "operation": "join",
+   "targets": [
+    "Tray"
+   ],
+   "name": "Ledge"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BackWall",
+   "name": "SwitchBackstop"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "SwX - SwW / 2 - 1 mm",
+     "ChinWall + SwD"
+    ],
+    [
+     "SwX + SwW / 2 + 1 mm",
+     "ChinWall + SwD"
+    ],
+    [
+     "SwX + SwW / 2 + 1 mm",
+     "ChinWall + SwD + RibT"
+    ],
+    [
+     "SwX - SwW / 2 - 1 mm",
+     "ChinWall + SwD + RibT"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "SwT",
+   "operation": "join",
+   "targets": [
+    "Tray"
+   ],
+   "name": "Backstop"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BackWall + SwT / 2 - PlungerH / 2",
+   "name": "SwitchSlot"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "SwX - PlungerW / 2",
+     "-1 mm"
+    ],
+    [
+     "SwX + PlungerW / 2",
+     "-1 mm"
+    ],
+    [
+     "SwX + PlungerW / 2",
+     "ChinWall + 0.1 mm"
+    ],
+    [
+     "SwX - PlungerW / 2",
+     "ChinWall + 0.1 mm"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "PlungerH",
+   "operation": "cut",
+   "targets": [
+    "Tray"
+   ],
+   "name": "SwitchSlotCut"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "name": "Pinhole"
+  }
+ },
+ {
+  "command": "sketch.circle.center",
+  "params": {
+   "center": [
+    "PinX",
+    "PinY"
+   ],
+   "diameter": 1.2
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c1"
+   ],
+   "type": "diameter",
+   "value": "PinD"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "BackWall",
+   "operation": "cut",
+   "targets": [
+    "Tray"
+   ],
+   "name": "PinholeCut"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "name": "UsbNotch"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "UsbCX - UsbW / 2 - Clear",
+     "-1 mm"
+    ],
+    [
+     "UsbCX + UsbW / 2 + Clear",
+     "-1 mm"
+    ],
+    [
+     "UsbCX + UsbW / 2 + Clear",
+     "UsbLen + Clear"
+    ],
+    [
+     "UsbCX - UsbW / 2 - Clear",
+     "UsbLen + Clear"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "ShellH",
+   "operation": "cut",
+   "targets": [
+    "Tray"
+   ],
+   "name": "UsbNotchCut"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "ShellH",
+   "name": "SheetOutline"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     "CaseW",
+     0
+    ],
+    [
+     "CaseW",
+     "CaseH"
+    ],
+    [
+     0,
+     "CaseH"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.fillet",
+  "params": {
+   "points": [
+    "l1.start",
+    "l1.end",
+    "l2.end",
+    "l3.end"
+   ],
+   "radius": "CornerR"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "SheetT",
+   "operation": "new",
+   "name": "Sheet",
+   "body_name": "FrontSheet"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     30.5,
+     0,
+     0
+    ],
+    [
+     30.5,
+     94.74,
+     0
+    ],
+    [
+     0,
+     47.37,
+     0
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     0
+    ],
+    [
+     59.82842712474619,
+     1.1715728752538102,
+     0
+    ],
+    [
+     59.82842712474619,
+     93.56842712474618,
+     0
+    ],
+    [
+     1.1715728752538102,
+     93.56842712474618,
+     0
+    ],
+    [
+     61.0,
+     47.37,
+     0
+    ],
+    [
+     56.175,
+     0,
+     0
+    ]
+   ],
+   "radius": "BackR",
+   "body": "Tray",
+   "name": "BackEdgeFillet"
+  }
+ },
+ {
+  "command": "solid.fillet",
+  "params": {
+   "edges": [
+    [
+     30.5,
+     0,
+     6.15
+    ],
+    [
+     30.5,
+     94.74,
+     6.15
+    ],
+    [
+     0,
+     47.37,
+     6.15
+    ],
+    [
+     1.1715728752538102,
+     1.1715728752538102,
+     6.15
+    ],
+    [
+     59.82842712474619,
+     1.1715728752538102,
+     6.15
+    ],
+    [
+     59.82842712474619,
+     93.56842712474618,
+     6.15
+    ],
+    [
+     1.1715728752538102,
+     93.56842712474618,
+     6.15
+    ],
+    [
+     61.0,
+     47.37,
+     6.15
+    ],
+    [
+     56.175,
+     0,
+     6.15
+    ]
+   ],
+   "radius": "RimR",
+   "body": "Tray",
+   "name": "RimFillet"
+  }
+ },
+ {
+  "command": "inspect.measure",
+  "params": {}
+ }
+]
