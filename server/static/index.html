@@ -86,8 +86,10 @@
   .pairing b { color: var(--ink); }
   .card.off .photo { opacity: .45; }
   .on-list { width: 100%; font-size: 11px; color: var(--muted); padding-bottom: 6px; margin-top: -8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .chin button.toggle { color: var(--accent); }
-  .chin button.toggle.added { color: var(--good); }
+  /* On a magnet's tab: a circle in the photo's corner, checked when the photo is on that magnet */
+  .pick { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border: none; background: none; display: grid; place-items: center; }
+  .pick span { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.92); box-shadow: inset 0 0 0 2px #9AA3AE; display: grid; place-items: center; color: transparent; }
+  .pick.on span { background: var(--good); box-shadow: none; color: #FFF; }
 
   /* Magnet dialog: add, rename, pairing code */
   dialog#magnet-dlg { border: none; border-radius: 14px; padding: 18px; max-width: min(420px, calc(100vw - 24px)); width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
@@ -193,6 +195,7 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
+const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
 const LOW_MV = 3500;
 let photos = [];
@@ -409,13 +412,14 @@ function card(p) {
   // A magnet: choose which photos it shows, and what comes next.
   if (isNext) fig.append(el("span", { className: "pill tag next", textContent: "Next up" }));
   else if (isNow) fig.append(el("span", { className: "pill tag now", textContent: "Showing now" }));
-  const toggle = el("button", { type: "button", className: "toggle" + (onIt ? " added" : ""), ariaPressed: String(onIt),
-                                textContent: onIt ? "\u2713 On magnet" : "+ Add", title: onIt ? "Take it off this magnet" : "Put it on this magnet" });
-  toggle.onclick = async () => {
+  const pick = el("button", { type: "button", className: "pick" + (onIt ? " on" : ""), role: "checkbox", ariaChecked: String(onIt),
+                              ariaLabel: `On ${m.name}`, title: onIt ? "Take it off this magnet" : "Put it on this magnet" });
+  pick.innerHTML = "<span>" + CHECK + "</span>";
+  pick.onclick = async () => {
     await api(`/api/devices/${m.id}/photos/${p.id}`, { method: onIt ? "DELETE" : "PUT" });
     refresh();
   };
-  acts.append(toggle);
+  fig.append(pick);
   if (onIt && many) {
     const nextBtn = el("button", { type: "button", textContent: isNext ? "Next up" : "Show next", className: isNext ? "on" : "" });
     if (isNext) nextBtn.disabled = true;
@@ -433,7 +437,7 @@ function renderGrid() {
   $("empty").hidden = n > 0;
   $("hint").hidden = n === 0;
   $("hint").textContent = m
-    ? "Tap \u201c+ Add\u201d to put a photo on this magnet. New uploads go to the library."
+    ? "Tap the circle on a photo to put it on this magnet or take it off. New uploads go to the library."
     : magnets.length ? "Tap a photo to see it in the magnet's colors. Choose a magnet above to pick its photos."
                      : "Tap a photo to see it in the magnet's colors. Add a magnet above to start showing photos.";
   $("grid").replaceChildren(...[...photos].reverse().map(card));  // newest first
