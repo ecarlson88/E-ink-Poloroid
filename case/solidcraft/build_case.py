@@ -5,8 +5,10 @@ expressions of them, and sketches follow the parameters when they change.
 Layout and numbers: case/layout.py and docs/case-dimensions.md (datasheets, unmeasured).
 
 Build (from this folder, SolidCraft 0.22):
-    python3 build_case.py            # magnet bars    -> magnet_case.json
-    python3 build_case.py discs      # 8 x 0.6 discs  -> magnet_case_discs.json
+    python3 build_case.py                 # layout v1, magnet bars    -> magnet_case.json
+    python3 build_case.py discs           # layout v1, 8 x 0.6 discs  -> magnet_case_discs.json
+    python3 build_case.py square          # square picture, bars      -> magnet_case_square.json
+    python3 build_case.py square discs    # square picture, discs     -> magnet_case_square_discs.json
     solidcraft-cli run magnet_case.json --save magnet_case.solidcraft --out magnet_case.step
 
 Coordinates (mm): x to the right and y up as seen from the front, z from the back face
@@ -20,8 +22,16 @@ from pathlib import Path
 # "bars": 12 x 8x3x1 bars upright along the side walls, on raised pads.
 # "discs": 6 x 8 mm discs, 0.6 thick (Erik's measured magnets), flush with the inside of the
 #          back wall (BackWall = MagSkin + MagT), so they can sit anywhere, even behind the battery.
-STYLE = sys.argv[1] if len(sys.argv) > 1 else "bars"
-assert STYLE in ("bars", "discs"), STYLE
+# "square" (Erik, mounting B): the bottom of the panel is masked to a square picture; the XIAO
+#          stands upright behind the masked strip, flipped so its parts face the front, with its
+#          USB-C out of the bottom edge (an opening in the bottom wall plus a pocket under the front
+#          frame) and the pinhole through the front of the chin. The back has no openings.
+#          See case/layout_square.py.
+ARGS = set(sys.argv[1:])
+assert ARGS <= {"discs", "square"}, ARGS
+STYLE = "discs" if "discs" in ARGS else "bars"
+SQUARE = "square" in ARGS
+MAG_ROWS_R = 5 if SQUARE else 6  # right-side bars (the XIAO takes the lowest spot in the square layout)
 
 # name, expression, comment. Plain values are measured or chosen; the rest are derived.
 MAG_ROWS = 6  # magnet bars per side; changing it needs a rebuild from this script
@@ -124,6 +134,40 @@ def rect(x0, y0, x1, y1):
     c("sketch.line", points=[[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed=True)
 
 
+def set_param(name, expr, comment=None, after=None):
+    """Replace a parameter's expression in place, or insert it after another one."""
+    names = [n for n, _, _ in PARAMS]
+    if name in names:
+        i = names.index(name)
+        PARAMS[i] = (name, expr, comment or PARAMS[i][2])
+    else:
+        PARAMS.insert(names.index(after) + 1 if after else len(PARAMS), (name, expr, comment or ""))
+
+
+if SQUARE:
+    # The panel sits just above the USB-C body; ChinH's slot becomes PanelY so later expressions see it.
+    i = [n for n, _, _ in PARAMS].index("ChinH")
+    PARAMS[i] = ("PanelY", "max(UsbLen + Clear, ChinWall + Fold + Clear)", "panel bottom edge: just above the USB-C body")
+    PARAMS[:] = [p for j, p in enumerate(PARAMS) if not (p[0] == "PanelY" and j > i)]
+    set_param("CaseH", "PanelY + PanelH + Clear + TopFrame", "overall height")
+    set_param("InnerD", "max(PanelT + max(BattT, AdapterT) + 2 * Clear, PanelT + Clear + XiaoBodyT + XiaoGap)",
+              "inside depth: the panel + battery stack, or the panel + the flipped XIAO behind it")
+    set_param("XiaoGap", "0.75 mm", "space between the back wall and the flipped XIAO's underside: clearance plus battery wire joints (Erik)")
+    set_param("WinY", "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask)", "window bottom (square picture at the top of the panel)")
+    set_param("WinH", "WinW", "window height: square")
+    set_param("XiaoX", "CaseW - Wall - Clear - XiaoH", "XIAO left edge (upright, at the right)")
+    set_param("XiaoY", "UsbOver", "XIAO bottom edge (USB-C face flush with the bottom edge)")
+    i = [n for n, _, _ in PARAMS].index("UsbCY")
+    PARAMS[i] = ("UsbCX", "XiaoX + XiaoH / 2", "USB-C centre x")
+    set_param("PinX", "XiaoX + BtnFromSide", "front pinhole x (over a XIAO button: check which one is reset)")
+    set_param("PinY", "XiaoY + BtnFromEnd", "front pinhole y")
+    PARAMS.append(("UsbPocket", "BackWall + XiaoGap + XiaoT + 0.1 mm - ShellH", "how far the USB-C pocket goes into the front frame"))
+    if STYLE == "bars":
+        PARAMS += [
+            ("MagBottomR", "XiaoY + XiaoW + Clear + 0.5 mm", "bottom of the lowest right magnet boss (above the XIAO)"),
+            ("MagPitchR", f"(MagTop - MagBottomR - BossL) / {MAG_ROWS_R - 1}", "spacing between right magnet rows"),
+        ]
+
 if STYLE == "discs":
     drop = {"MagW", "MagL", "BossW", "BossL", "MagBottom", "MagTop", "MagPitch", "BossWall", "BackWall"}
     PARAMS = [p for p in PARAMS if p[0] not in drop]
@@ -138,6 +182,8 @@ if STYLE == "discs":
         ("DiscTopY", "CaseH - CornerR - 1 mm - MagD / 2", "upper disc row (below the rounded corners)"),
         ("DiscMidY", "(DiscLowY + DiscTopY) / 2", "middle disc row"),
     ]
+    if SQUARE:
+        PARAMS.append(("DiscLowYR", "XiaoY + XiaoW + Clear + 1 mm + MagD / 2", "lower right disc (above the XIAO)"))
 
 for name, expr, comment in PARAMS:
     c("parameters.add", name=name, expression=expr, comment=comment)
@@ -162,6 +208,8 @@ if STYLE == "bars":
         # left side: the boss starts inside the side wall so it merges with it
         bosses.append(("Wall - 0.5 mm", y0, "Wall + BossW", f"{y0} + BossL"))
         pockets.append(("Wall", f"{y0} + BossWall", "Wall + MagW + MagGap", f"{y0} + BossWall + MagL + MagGap"))
+    for i in range(MAG_ROWS_R):
+        y0 = f"MagBottomR + {i} * MagPitchR" if SQUARE else f"MagBottom + {i} * MagPitch"
         # right side, mirrored
         bosses.append(("CaseW - Wall - BossW", y0, "CaseW - Wall + 0.5 mm", f"{y0} + BossL"))
         pockets.append(("CaseW - Wall - MagW - MagGap", f"{y0} + BossWall", "CaseW - Wall", f"{y0} + BossWall + MagL + MagGap"))
@@ -181,6 +229,8 @@ if STYLE == "bars":
 else:
     # Flush disc pockets from the inside of the back wall, leaving MagSkin.
     discs = [(x, y) for y in ("DiscLowY", "DiscMidY", "DiscTopY") for x in ("DiscInset", "CaseW - DiscInset")]
+    if SQUARE:
+        discs[1] = ("CaseW - DiscInset", "DiscLowYR")
     c("sketch.create", plane="XY", offset="BackWall", name="MagnetPockets")
     for i, (dx, dy) in enumerate(discs, start=1):
         c("sketch.circle.center", center=[dx, dy], diameter=8)
@@ -194,23 +244,33 @@ else:
 c("sketch.create", plane="XY", offset="BackWall", name="CrossRibs")
 # The ribs stop short of the side walls so the front frame's lip (just inside the walls) passes.
 rect("Wall + 2 * LipGap + LipW", "RibY", "CaseW / 2 - RibGap / 2", "RibY + RibT")
-rect("CaseW / 2 + RibGap / 2", "RibY", "CaseW - Wall - 2 * LipGap - LipW", "RibY + RibT")
+if not SQUARE:   # in the square layout the XIAO takes the right rib's place
+    rect("CaseW / 2 + RibGap / 2", "RibY", "CaseW - Wall - 2 * LipGap - LipW", "RibY + RibT")
 c("sketch.finish")
 c("solid.extrude", distance="InnerD", operation="join", targets=["BackShell"], name="Ribs")
 
-# Pinhole through the back wall, over one of the XIAO's buttons.
-c("sketch.create", plane="XY", name="Pinhole")
-c("sketch.circle.center", center=["PinX", "PinY"], diameter=1.2)
-c("sketch.dimension", entities=["c1"], type="diameter", value="PinD")
-c("sketch.finish")
-c("solid.extrude", distance="BackWall", operation="cut", targets=["BackShell"], name="PinholeCut")
+if not SQUARE:
+    # Pinhole through the back wall, over one of the XIAO's buttons.
+    c("sketch.create", plane="XY", name="Pinhole")
+    c("sketch.circle.center", center=["PinX", "PinY"], diameter=1.2)
+    c("sketch.dimension", entities=["c1"], type="diameter", value="PinD")
+    c("sketch.finish")
+    c("solid.extrude", distance="BackWall", operation="cut", targets=["BackShell"], name="PinholeCut")
 
-# USB-C: the receptacle sits in a notch through the back wall and the side wall, its face
-# flush with the outside, so a cable's plug (whose grip stays outside the case) seats fully.
-c("sketch.create", plane="XY", name="UsbNotch")
-rect("XiaoX + XiaoW - (UsbLen - UsbOver) - Clear", "UsbCY - UsbW / 2 - Clear", "CaseW + 1 mm", "UsbCY + UsbW / 2 + Clear")
-c("sketch.finish")
-c("solid.extrude", distance="ShellH", operation="cut", targets=["BackShell"], name="UsbNotchCut")
+    # USB-C: the receptacle sits in a notch through the back wall and the side wall, its face
+    # flush with the outside, so a cable's plug (whose grip stays outside the case) seats fully.
+    c("sketch.create", plane="XY", name="UsbNotch")
+    rect("XiaoX + XiaoW - (UsbLen - UsbOver) - Clear", "UsbCY - UsbW / 2 - Clear", "CaseW + 1 mm", "UsbCY + UsbW / 2 + Clear")
+    c("sketch.finish")
+    c("solid.extrude", distance="ShellH", operation="cut", targets=["BackShell"], name="UsbNotchCut")
+
+else:
+    # USB-C out of the bottom edge: an opening in the bottom wall above the flipped board's
+    # underside (the back stays closed), and a pocket under the front frame further down.
+    c("sketch.create", plane="XY", offset="BackWall + XiaoGap - Clear", name="UsbOpening")
+    rect("UsbCX - UsbW / 2 - Clear", "-1 mm", "UsbCX + UsbW / 2 + Clear", "ChinWall + 0.5 mm")
+    c("sketch.finish")
+    c("solid.extrude", distance="ShellH", operation="cut", targets=["BackShell"], name="UsbOpeningCut")
 
 # Front frame: a plate on the shell with the window cut through it.
 c("sketch.create", plane="XY", offset="ShellH", name="FrameOutline")
@@ -231,6 +291,18 @@ rounded_rect("Wall + LipGap + LipW", "Wall + LipGap + LipW", "CaseW - Wall - Lip
 c("sketch.finish")
 c("solid.extrude", distance="LipH", direction="negative", operation="join", targets=["FrontFrame"], name="LipRing")
 
+if SQUARE:
+    # USB-C pocket under the front frame (also notching the lip there), and the front pinhole.
+    c("sketch.create", plane="XY", offset="ShellH - LipH - 0.1 mm", name="UsbPocket")
+    rect("UsbCX - UsbW / 2 - Clear", "-1 mm", "UsbCX + UsbW / 2 + Clear", "UsbLen + Clear")
+    c("sketch.finish")
+    c("solid.extrude", distance="LipH + 0.1 mm + UsbPocket", operation="cut", targets=["FrontFrame"], name="UsbPocketCut")
+    c("sketch.create", plane="XY", offset="ShellH + FrontWall", name="Pinhole")
+    c("sketch.circle.center", center=["PinX", "PinY"], diameter=1.2)
+    c("sketch.dimension", entities=["c1"], type="diameter", value="PinD")
+    c("sketch.finish")
+    c("solid.extrude", distance="FrontWall", direction="negative", operation="cut", targets=["FrontFrame"], name="PinholeCut")
+
 # --- Edge finishing ------------------------------------------------------------------------
 # SolidCraft picks an edge by a point on it (plain numbers) and then keeps it by geometry, so
 # these points come from the default parameter values and the fillets follow later changes.
@@ -248,30 +320,35 @@ def values():
 v = values()
 W, H, R = v["CaseW"], v["CaseH"], v["CornerR"]
 k = R * (1 - 1 / math.sqrt(2))                     # 45 degree point on a corner arc
-notch_lo = v["UsbCY"] - v["UsbW"] / 2 - v["Clear"]
+if SQUARE:
+    notch_hi = v["UsbCX"] + v["UsbW"] / 2 + v["Clear"]
+else:
+    notch_lo = v["UsbCY"] - v["UsbW"] / 2 - v["Clear"]
 
 
-def outline(z, right_split=False):
+def outline(z, right_split=False, bottom_split=False):
     pts = [[W / 2, 0, z], [W / 2, H, z], [0, H / 2, z],
            [k, k, z], [W - k, k, z], [W - k, H - k, z], [k, H - k, z]]
     if right_split:   # the USB-C notch splits the right edge in two
         pts += [[W, (R + notch_lo) / 2, z], [W, H / 2, z]]
     else:
         pts += [[W, H / 2, z]]
+    if bottom_split:  # the bottom USB-C opening splits the bottom edge: add the piece to its right
+        pts += [[(notch_hi + W - R) / 2, 0, z]]
     return pts
 
 
 top = v["ShellH"] + v["FrontWall"]
 c("solid.fillet", edges=outline(top), radius="FrontR", body="FrontFrame", name="FrontEdgeFillet")
-c("solid.fillet", edges=outline(v["ShellH"]), radius="SeamR", body="FrontFrame", name="FrameSeamFillet")
-c("solid.fillet", edges=outline(v["ShellH"], right_split=True), radius="SeamR", body="BackShell", name="ShellSeamFillet")
-c("solid.fillet", edges=outline(0, right_split=True), radius="BackR", body="BackShell", name="BackEdgeFillet")
+c("solid.fillet", edges=outline(v["ShellH"], bottom_split=SQUARE), radius="SeamR", body="FrontFrame", name="FrameSeamFillet")
+c("solid.fillet", edges=outline(v["ShellH"], right_split=not SQUARE, bottom_split=SQUARE), radius="SeamR", body="BackShell", name="ShellSeamFillet")
+c("solid.fillet", edges=outline(0, right_split=not SQUARE), radius="BackR", body="BackShell", name="BackEdgeFillet")
 wx, wy, ww, wh = v["WinX"], v["WinY"], v["WinW"], v["WinH"]
 c("solid.chamfer", edges=[[wx + ww / 2, wy, top], [wx + ww / 2, wy + wh, top], [wx, wy + wh / 2, top], [wx + ww, wy + wh / 2, top]],
   distance="WinChamfer", body="FrontFrame", name="WindowChamfer")
 
 c("inspect.measure")
 
-out = Path(__file__).with_name("magnet_case.json" if STYLE == "bars" else "magnet_case_discs.json")
+out = Path(__file__).with_name("magnet_case" + ("_square" if SQUARE else "") + ("_discs" if STYLE == "discs" else "") + ".json")
 out.write_text(json.dumps(cmds, indent=1) + "\n")
 print(f"wrote {out} ({len(cmds)} commands, {len(PARAMS)} parameters)")
