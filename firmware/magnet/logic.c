@@ -98,3 +98,8 @@ boot_action_t boot_action(wake_kind_t wake, bool double_press_flag)
     if (wake != WAKE_POWER_ON) return BOOT_NORMAL;
     return double_press_flag ? BOOT_SETUP : BOOT_ARM_DOUBLE_PRESS;
 }
+
+button_action_t button_action(uint32_t held_ms)
+{
+    return held_ms >= SETUP_HOLD_MS ? BUTTON_SETUP : BUTTON_NEXT_PHOTO;
+}

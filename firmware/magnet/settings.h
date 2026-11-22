@@ -30,3 +30,9 @@
 #ifndef DOUBLE_PRESS_WINDOW_MS
 #define DOUBLE_PRESS_WINDOW_MS 5000u
 #endif
+
+/* Task 5 (Erik): hold the edge button (D5, acrylic case) this long for setup mode;
+ * a shorter press shows the next photo. */
+#ifndef SETUP_HOLD_MS
+#define SETUP_HOLD_MS 5000u
+#endif

@@ -46,7 +46,7 @@ Erik has ordered: XIAO ESP32-S3, the GDEH037E01 panel with its driver adapter, a
 ## Behavior
 - Wake on a timer once a day (Erik's call), join Wi-Fi, fetch the next ready-to-display image, draw it, report battery, sleep.
 - Optional extra: shake the magnet to show the next photo (max 8 a day).
-- Setup mode: if Wi-Fi fails repeatedly, or the reset button is pressed twice within 5 seconds (a paperclip through a pinhole in the back; one press just shows a fresh photo), the magnet creates its own hotspot and a phone page lets parents choose their Wi-Fi.
+- Setup mode: if Wi-Fi fails repeatedly, or the reset button is pressed twice within 5 seconds (a paperclip through a pinhole in the back; one press just shows a fresh photo), or, on the acrylic case, the edge button is held for 5 seconds (a short press shows the next photo), the magnet creates its own hotspot and a phone page lets parents choose their Wi-Fi.
 - Low battery: draw a small battery icon, and report battery to the server so Erik gets a notice.
 
 ## Web app and security

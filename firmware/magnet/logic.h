@@ -51,6 +51,13 @@ typedef enum { WAKE_POWER_ON, WAKE_DEEP_SLEEP, WAKE_OTHER } wake_kind_t;
 typedef enum { BOOT_NORMAL, BOOT_ARM_DOUBLE_PRESS, BOOT_SETUP } boot_action_t;
 boot_action_t boot_action(wake_kind_t wake, bool double_press_flag);
 
+/* Task 5 (Erik): the edge button on D5 (acrylic case). After a D5 wake, main times how
+ * long D5 stays low, up to SETUP_HOLD_MS, and acts on the result:
+ *   BUTTON_NEXT_PHOTO: run the normal fetch and draw (not counted against the shake cap)
+ *   BUTTON_SETUP: open setup mode, as on the third failed wake */
+typedef enum { BUTTON_NEXT_PHOTO, BUTTON_SETUP } button_action_t;
+button_action_t button_action(uint32_t held_ms);
+
 #ifdef __cplusplus
 }
 #endif

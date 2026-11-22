@@ -144,6 +144,16 @@ static void test_boot_action(void)
     CHECK(boot_action(WAKE_OTHER, false) == BOOT_NORMAL);
 }
 
+/* Task 5 (Erik): the edge button on D5. A short press shows the next photo; holding it
+ * SETUP_HOLD_MS (5 s) opens setup mode. A bump from a door slam reads as a short press. */
+static void test_button_action(void)
+{
+    CHECK(button_action(0) == BUTTON_NEXT_PHOTO);            /* bump or tap */
+    CHECK(button_action(4999) == BUTTON_NEXT_PHOTO);
+    CHECK(button_action(SETUP_HOLD_MS) == BUTTON_SETUP);     /* 5000 */
+    CHECK(button_action(60000) == BUTTON_SETUP);             /* held long, or stuck */
+}
+
 int main(void)
 {
     test_frame_ok();
@@ -155,6 +165,7 @@ int main(void)
     test_shake_allowed();
     test_remaining_sleep_seconds();
     test_boot_action();
+    test_button_action();
     if (failures) {
         printf("%d check(s) failed\n", failures);
         return 1;
