@@ -60,6 +60,9 @@
   .pill.next { background: var(--accent); }
   .del { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border: none; background: none; display: grid; place-items: center; }
   .del span { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.92); display: grid; place-items: center; }
+  .del.armed { width: auto; right: 8px; }
+  .card:has(.del.armed) .pill.tag { visibility: hidden; }
+  .del.armed span { width: auto; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--warn); color: #FFF; font-size: 13px; font-weight: 700; }
   .chin { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
   .chin .date { font-weight: 600; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .chin button { border: none; background: none; font-size: 13px; font-weight: 600; min-height: 44px; padding: 0 2px; }
@@ -208,8 +211,24 @@ function card(p) {
   else if (isNow) fig.append(el("span", { className: "pill tag now", textContent: "Showing now" }));
   const del = el("button", { type: "button", className: "del", ariaLabel: "Delete photo", title: "Delete" });
   del.innerHTML = "<span>" + TRASH + "</span>";
+  // Press twice: the first tap turns the button into "Delete?" for 4 seconds; a second tap deletes.
+  let timer = null;
+  const disarm = () => {
+    clearTimeout(timer); timer = null;
+    del.classList.remove("armed"); del.innerHTML = "<span>" + TRASH + "</span>";
+    del.ariaLabel = "Delete photo"; del.title = "Delete";
+    removeEventListener("pointerdown", outside, true);
+  };
+  const outside = (e) => { if (!del.contains(e.target)) disarm(); };
   del.onclick = async () => {
-    if (!confirm("Delete this photo from the magnet?")) return;
+    if (!timer) {
+      del.classList.add("armed"); del.innerHTML = "<span>Delete?</span>";
+      del.ariaLabel = "Tap again to delete this photo"; del.title = "Tap again to delete";
+      timer = setTimeout(disarm, 4000);
+      addEventListener("pointerdown", outside, true);
+      return;
+    }
+    disarm();
     await api(`/api/photos/${p.id}`, { method: "DELETE" });
     panelView.delete(p.id);
     refresh();

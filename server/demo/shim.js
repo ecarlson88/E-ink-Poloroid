@@ -162,7 +162,6 @@
       srcDesc.set.call(this, v);
     },
   });
-  window.confirm = () => true;   // the demo frame blocks dialogs; deleting just happens
 
   // --- Sample photos: generated scenes in different shapes, so cropping has something to do.
   function scene(w, h, draw) {
