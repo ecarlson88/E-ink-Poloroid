@@ -1,8 +1,8 @@
 # Case (Task 7)
 
 **CAD: `solidcraft/`** holds the parametric SolidCraft designs with STEP and STL exports:
-the **square picture version** (Erik's choice: `layout_square.py`, mounting B, 64.6 x 96.5 x
-6.85) and layout v1 (full screen, 64.6 x 110.8 x 6.6, below) for comparison.
+the **compact version with a 3:4 picture** (Erik's choice: `layout_compact.py`, mounting B,
+64.6 x 96.5 x 6.85) and layout v1 (full screen, 64.6 x 110.8 x 6.6, below) for comparison.
 
 `layout.py` draws the proposed layout to scale  from the numbers in
 `docs/case-dimensions.md`. Rerun it after measuring the parts: `python3 case/layout.py`

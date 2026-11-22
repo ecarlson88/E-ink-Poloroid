@@ -4,17 +4,19 @@ A native, parametric SolidCraft design of layout v1 (`../layout_v1.png`), built 
 with SolidCraft 0.22.0's command-line tool. Unmeasured: every size comes from the
 datasheets (`docs/case-dimensions.md`).
 
-## Square picture version (Erik's choice, mounting B)
+## Compact version, 3:4 picture (Erik's choice, mounting B)
 
-`magnet_case_square.*` (bars) and `magnet_case_square_discs.*` (discs), with `back_shell_square.stl`,
-`back_shell_square_discs.stl` and `front_frame_square.stl`. **64.6 x 96.5 x 6.85** (14.3 mm shorter
-than v1). Layout study: `../layout_square.png`.
+`magnet_case_compact.*` (bars) and `magnet_case_compact_discs.*` (discs), with `back_shell_compact.stl`,
+`back_shell_compact_discs.stl` and `front_frame_compact.stl`. **64.6 x 96.5 x 6.85** (14.3 mm shorter
+than v1). Layout: `../layout_compact.png`. Build: `python3 build_case.py compact [discs]`.
 
-- **Picture:** the window is a 50.6 mm square at the top of the panel; the frame masks the
-  bottom ~25.9 mm of the screen, which reads as a big Polaroid chin.
-- **XIAO:** stands upright at the right, 14.9 mm of it behind the masked strip, **flipped
-  so its parts face the front**. Its pads face the back with 0.75 mm (`XiaoGap`) for
-  clearance and wire joints.
+- **Picture:** the window is 50.6 x 67.5 (3:4, `PicRatio` = 4/3, a parameter with no unit:
+  1 = square, ~1.5 = full screen) at the top of the panel. The frame covers the bottom
+  ~9 mm of the screen, so the chin (bottom edge to picture) is 22.7 mm, 24% of the
+  height. A real Polaroid's is ~21%.
+- **XIAO:** stands upright at the right, 14.9 mm of it behind the bottom of the panel,
+  **flipped so its parts face the front**. Its pads face the back with 0.75 mm (`XiaoGap`)
+  for clearance and wire joints.
 - **USB-C:** points down, its face flush with the bottom edge. It goes through an opening
   in the bottom wall (the back stays closed) and 0.3 mm into a pocket under the front
   frame, 0.6 of frame left over it; the frame's lip is notched there.
@@ -23,12 +25,13 @@ than v1). Layout study: `../layout_square.png`.
 - **Inside:** only the left cross rib; the XIAO takes the right one's place. Bars: six
   on the left, five on the right above the XIAO (`MagBottomR`). Discs: the lower right
   one moves above the XIAO (`DiscLowYR`).
-- **Checked:** both build, 0 interferences, and changing XiaoGap, BattT, CornerR and
-  UsbLen together rebuilt every feature with face counts unchanged.
-- **Renders:** `render_square_front.png`, `render_square_back.png`,
-  `render_square_inside.png`, `render_square_inside_discs.png`.
+- **Checked:** both build, 0 interferences, and changing PicRatio, XiaoGap and CornerR
+  together rebuilt every feature with face counts unchanged.
+- **Renders:** `render_compact_front.png`, `render_compact_face.png`,
+  `render_compact_back.png`, `render_compact_inside.png`,
+  `render_compact_inside_discs.png`.
 - **Still to do:** a slot in the chin for the antenna (its socket ends up behind the
-  panel, so route its cable down); the server cropping photos to the square.
+  panel, so route its cable down); the server cropping photos to 3:4.
 
 ## Layout v1 (full screen)
 

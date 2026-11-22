@@ -7,8 +7,8 @@ Layout and numbers: case/layout.py and docs/case-dimensions.md (datasheets, unme
 Build (from this folder, SolidCraft 0.22):
     python3 build_case.py                 # layout v1, magnet bars    -> magnet_case.json
     python3 build_case.py discs           # layout v1, 8 x 0.6 discs  -> magnet_case_discs.json
-    python3 build_case.py square          # square picture, bars      -> magnet_case_square.json
-    python3 build_case.py square discs    # square picture, discs     -> magnet_case_square_discs.json
+    python3 build_case.py compact         # compact case, 3:4 picture, bars  -> magnet_case_compact.json
+    python3 build_case.py compact discs   # compact case, 3:4 picture, discs -> magnet_case_compact_discs.json
     solidcraft-cli run magnet_case.json --save magnet_case.solidcraft --out magnet_case.step
 
 Coordinates (mm): x to the right and y up as seen from the front, z from the back face
@@ -22,15 +22,15 @@ from pathlib import Path
 # "bars": 12 x 8x3x1 bars upright along the side walls, on raised pads.
 # "discs": 6 x 8 mm discs, 0.6 thick (Erik's measured magnets), flush with the inside of the
 #          back wall (BackWall = MagSkin + MagT), so they can sit anywhere, even behind the battery.
-# "square" (Erik, mounting B): the bottom of the panel is masked to a square picture; the XIAO
-#          stands upright behind the masked strip, flipped so its parts face the front, with its
-#          USB-C out of the bottom edge (an opening in the bottom wall plus a pocket under the front
-#          frame) and the pinhole through the front of the chin. The back has no openings.
-#          See case/layout_square.py.
+# "compact" (Erik, mounting B): the XIAO stands upright behind the bottom of the panel, flipped
+#          so its parts face the front, with its USB-C out of the bottom edge (an opening in the
+#          bottom wall plus a pocket under the front frame) and the pinhole through the front of
+#          the chin. The back has no openings. The picture is 3:4 (PicRatio): the frame masks the
+#          bottom of the panel for a Polaroid-like chin. See case/layout_compact.py.
 ARGS = set(sys.argv[1:])
-assert ARGS <= {"discs", "square"}, ARGS
+assert ARGS <= {"discs", "compact"}, ARGS
 STYLE = "discs" if "discs" in ARGS else "bars"
-SQUARE = "square" in ARGS
+SQUARE = "compact" in ARGS   # (named for the first, square-picture version of this layout)
 MAG_ROWS_R = 5 if SQUARE else 6  # right-side bars (the XIAO takes the lowest spot in the square layout)
 
 # name, expression, comment. Plain values are measured or chosen; the rest are derived.
@@ -153,8 +153,9 @@ if SQUARE:
     set_param("InnerD", "max(PanelT + max(BattT, AdapterT) + 2 * Clear, PanelT + Clear + XiaoBodyT + XiaoGap)",
               "inside depth: the panel + battery stack, or the panel + the flipped XIAO behind it")
     set_param("XiaoGap", "0.75 mm", "space between the back wall and the flipped XIAO's underside: clearance plus battery wire joints (Erik)")
-    set_param("WinY", "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask)", "window bottom (square picture at the top of the panel)")
-    set_param("WinH", "WinW", "window height: square")
+    set_param("PicRatio", "4 / 3", "picture height / width (Erik: 3:4; 1 = square, 1.5 = full screen)", after="Mask")
+    set_param("WinY", "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask) * PicRatio", "window bottom (the picture sits at the top of the panel)")
+    set_param("WinH", "WinW * PicRatio", "window height")
     set_param("XiaoX", "CaseW - Wall - Clear - XiaoH", "XIAO left edge (upright, at the right)")
     set_param("XiaoY", "UsbOver", "XIAO bottom edge (USB-C face flush with the bottom edge)")
     i = [n for n, _, _ in PARAMS].index("UsbCY")
@@ -185,8 +186,12 @@ if STYLE == "discs":
     if SQUARE:
         PARAMS.append(("DiscLowYR", "XiaoY + XiaoW + Clear + 1 mm + MagD / 2", "lower right disc (above the XIAO)"))
 
+UNITLESS = {"PicRatio"}   # SolidCraft reads a bare number as mm unless the unit is given as ""
 for name, expr, comment in PARAMS:
-    c("parameters.add", name=name, expression=expr, comment=comment)
+    if name in UNITLESS:
+        c("parameters.add", name=name, expression=expr, unit="", comment=comment)
+    else:
+        c("parameters.add", name=name, expression=expr, comment=comment)
 
 # Back shell: a rounded block, hollowed from the front down to the back wall.
 c("sketch.create", plane="XY", name="ShellOutline")
@@ -349,6 +354,6 @@ c("solid.chamfer", edges=[[wx + ww / 2, wy, top], [wx + ww / 2, wy + wh, top], [
 
 c("inspect.measure")
 
-out = Path(__file__).with_name("magnet_case" + ("_square" if SQUARE else "") + ("_discs" if STYLE == "discs" else "") + ".json")
+out = Path(__file__).with_name("magnet_case" + ("_compact" if SQUARE else "") + ("_discs" if STYLE == "discs" else "") + ".json")
 out.write_text(json.dumps(cmds, indent=1) + "\n")
 print(f"wrote {out} ({len(cmds)} commands, {len(PARAMS)} parameters)")

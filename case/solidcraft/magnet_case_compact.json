@@ -282,6 +282,15 @@
  {
   "command": "parameters.add",
   "params": {
+   "name": "PicRatio",
+   "expression": "4 / 3",
+   "unit": "",
+   "comment": "picture height / width (Erik: 3:4; 1 = square, 1.5 = full screen)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
    "name": "PinD",
    "expression": "1.2 mm",
    "comment": "pinhole for a paperclip"
@@ -451,8 +460,8 @@
   "command": "parameters.add",
   "params": {
    "name": "WinY",
-   "expression": "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask)",
-   "comment": "window bottom (square picture at the top of the panel)"
+   "expression": "PanelY + PanelH - AATop - Mask - (AAW - 2 * Mask) * PicRatio",
+   "comment": "window bottom (the picture sits at the top of the panel)"
   }
  },
  {
@@ -467,8 +476,8 @@
   "command": "parameters.add",
   "params": {
    "name": "WinH",
-   "expression": "WinW",
-   "comment": "window height: square"
+   "expression": "WinW * PicRatio",
+   "comment": "window height"
   }
  },
  {
@@ -1883,7 +1892,7 @@
    "edges": [
     [
      32.3,
-     39.589999999999996,
+     22.72333333333333,
      6.85
     ],
     [
@@ -1893,12 +1902,12 @@
     ],
     [
      7.0,
-     64.89,
+     56.45666666666666,
      6.85
     ],
     [
      57.6,
-     64.89,
+     56.45666666666666,
      6.85
     ]
    ],

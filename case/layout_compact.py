@@ -1,8 +1,8 @@
-"""Layout study: square picture (the bottom of the panel masked) with the XIAO standing upright
-behind the masked strip, its USB-C end down in a compact chin. Exploration only: the CAD
-(case/solidcraft) still models layout v1.
+"""Compact layout (Erik's choice): the XIAO stands upright behind the bottom of the panel, its
+USB-C end down in a small chin, and the frame masks the bottom of the panel to a 3:4 picture
+(PIC_RATIO) for a Polaroid-like chin. Mounting B was chosen. CAD: case/solidcraft/magnet_case_compact*.
 
-    python3 case/layout_square.py      -> case/layout_square.png
+    python3 case/layout_compact.py     -> case/layout_compact.png
 
 Two ways to mount the XIAO are drawn (side sections):
   A: parts facing the back (as in v1): rear pinhole works; the USB-C needs a back notch.
@@ -31,6 +31,7 @@ BTN_FROM_END, BTN_FROM_SIDE = 1.6, 3.0
 # Choices (as in v1)
 WALL_SIDE, TOP_FRAME, CLEAR, SHELL_WALL, CHIN_WALL = 3.0, 3.0, 0.3, 1.2, 1.2
 FRONT_WALL, BACK_WALL, FOLD, MASK = 1.0, 1.0, 2.0, 0.5
+PIC_RATIO = 4 / 3                        # picture height / width (Erik: 3:4)
 XIAO_GAP = 0.75                          # clearance plus wire joints on the pad side (Erik)
 MAG_W, MAG_L, MAG_GAP, BOSS_WALL = 3.0, 8.0, 0.2, 1.0
 RIB_T, RIB_GAP, CORNER_R = 1.2, 30.0, 4.0
@@ -43,8 +44,9 @@ CASE_H = panel_y + PANEL_H + CLEAR + TOP_FRAME
 aa_x = panel_x + AA_LEFT
 win_w = AA_W - 2 * MASK
 win_top = panel_y + PANEL_H - AA_TOP - MASK
-win = (aa_x + MASK, win_top - win_w, win_w, win_w)          # square
-masked = (aa_x, panel_y + PANEL_H - AA_TOP - AA_H, AA_W, (win_top - win_w) - (panel_y + PANEL_H - AA_TOP - AA_H))
+win_h = win_w * PIC_RATIO
+win = (aa_x + MASK, win_top - win_h, win_w, win_h)
+masked = (aa_x, panel_y + PANEL_H - AA_TOP - AA_H, AA_W, (win_top - win_h) - (panel_y + PANEL_H - AA_TOP - AA_H))
 
 # XIAO upright at the right, USB-C face flush with the bottom edge.
 xiao_x1 = CASE_W - SHELL_WALL - CLEAR
@@ -119,7 +121,7 @@ def box(a, r, label=None, color=INK, ls="-", fill=None, fs=7, lw=1.1, alpha=1.0,
 ax.add_patch(FancyBboxPatch((0, 0), CASE_W, CASE_H, boxstyle=f"round,pad=0,rounding_size={CORNER_R}", fc="#FBFAF7", ec=INK, lw=2))
 box(ax, win, None, fill="#5E8C9A")
 ax.add_patch(Rectangle((win[0], win[1]), win[2], win[3] * 0.35, fc="#6E8C5A", ec="none"))
-ax.text(win[0] + win[2] / 2, win[1] + win[3] - 4, f"picture {win_w:.1f} x {win_w:.1f}", ha="center", va="top", fontsize=9, color="white")
+ax.text(win[0] + win[2] / 2, win[1] + win[3] - 4, f"picture {win_w:.1f} x {win_h:.1f} (3:4)", ha="center", va="top", fontsize=9, color="white")
 box(ax, masked, f"masked panel strip ({masked[3]:.1f} tall)", color=MUTED, hatch="////", fs=7, alpha=0.6)
 box(ax, (panel_x, panel_y, PANEL_W, PANEL_H), color=MUTED, ls="--")
 box(ax, batt, f"battery {BATT_W:g} x {BATT_H:g} x {BATT_T:g}", color="#B3261E", ls="--")
@@ -127,7 +129,7 @@ box(ax, adapter, "adapter", color="#2457C5", ls="--")
 box(ax, fpc_exit, None, color="#B26B00", ls=":", fill="#F6E3B4", alpha=0.5)
 box(ax, fpc_wide, None, color="#B26B00", ls=":", fill="#F6E3B4", alpha=0.5)
 ax.text(fpc_exit[0] + fpc_exit[2] / 2, panel_y + 3, "panel cable\n(folded behind)", ha="center", fontsize=6, color="#B26B00")
-box(ax, xiao, "XIAO\nupright,\nbehind the\nmasked strip", color="#2F8A4E", fill="#D6EEDD", alpha=0.85)
+box(ax, xiao, "XIAO\nupright,\nbehind the\npanel", color="#2F8A4E", fill="#D6EEDD", alpha=0.85)
 box(ax, usb, None, color="#2F8A4E", fill="#7FBF94")
 ax.annotate("USB-C (bottom edge)", (usb[0] + USB_W / 2, 0), (usb[0] + USB_W / 2, -7), ha="center", fontsize=8, color="#2F8A4E",
             arrowprops=dict(arrowstyle="-|>", color="#2F8A4E"))
@@ -174,13 +176,13 @@ def section(a, T, inner_d, mode):
 
 section(axs[1], T_A, inner_A, "A"); axs[1].set_title("A: parts face the back\n(rear pinhole)", fontsize=10)
 section(axs[2], T_B, inner_B, "B"); axs[2].set_title("B: flipped, parts face the front\n(clean back)", fontsize=10)
-fig.suptitle(f"Square picture + XIAO behind the masked strip: {CASE_W:.1f} x {CASE_H:.1f} mm, "
+fig.suptitle(f"Compact layout, 3:4 picture, XIAO behind the panel: {CASE_W:.1f} x {CASE_H:.1f} mm, "
              f"{T_A:.2f} (A) or {T_B:.2f} (B) thick", fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.96])
-out = Path(__file__).with_name("layout_square.png")
+out = Path(__file__).with_name("layout_compact.png")
 fig.savefig(out, dpi=110)
 
-print(f"case {CASE_W:.1f} x {CASE_H:.2f}; panel bottom at y {panel_y:.1f}; picture {win_w:.1f} square, "
+print(f"case {CASE_W:.1f} x {CASE_H:.2f}; panel bottom at y {panel_y:.1f}; picture {win_w:.1f} x {win_h:.1f}, "
       f"chin (bottom edge to picture) {win[1]:.1f} = {win[1] / CASE_H:.0%}")
 print(f"thickness A {T_A:.2f} (USB-C flush in a back notch), B {T_B:.2f} (USB-C {usb_into_front_B:.2f} into the front frame)")
 print(f"XIAO x {xiao_x0:.1f}..{xiao_x1:.1f}, y {xiao_y0:.1f}..{xiao_y1:.1f} ({xiao_y1 - panel_y:.1f} behind the panel); "
