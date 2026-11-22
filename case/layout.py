@@ -27,7 +27,7 @@ USB_OVERHANG, USB_W, USB_LEN = 1.5, 8.9, 7.3
 BTN_FROM_END, BTN_FROM_SIDE, BTN_W, BTN_H, BTN_TOP = 1.6, 3.0, 1.6, 2.6, 0.73  # R and B buttons (STEP): centre from USB end / long edge, size, height above the PCB
 PCB_T = 1.25
 PINHOLE_D = 1.2                                          # for a straightened paperclip
-JOINT = 1.0                                              # battery wire solder joints on the underside pads (guess)
+XIAO_GAP = 0.75                                          # Erik: front wall to XIAO underside, clearance plus wire joints
 
 # --- Case choices (v0 proposals) ---
 WALL_SIDE, WALL_TOP = 3.0, 3.0      # frame width around the panel at the sides and top
@@ -52,6 +52,7 @@ MASK = 0.5                           # the frame overlaps the active area by thi
 # the back; the USB-C sits in a notch through the back shell, so only the board body sets the depth.
 
 # The thickest stack, and deep enough that the USB-C (through the back notch) stays flush with the back face.
+JOINT = XIAO_GAP - CLEAR                                 # room left for the wire joints
 inner_depth = max(max(PANEL_T + max(BATT_T, ADAPTER_T), JOINT + XIAO_BODY_T) + 2 * CLEAR,
                   CLEAR + JOINT + XIAO_T - BACK_WALL)
 CASE_W = PANEL_W + 2 * (WALL_SIDE + CLEAR)

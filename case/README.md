@@ -9,7 +9,7 @@
 
 ## Layout v1 (proposal, datasheet numbers, unmeasured)
 
-About **64.6 x 110.8 x 6.7 mm**.
+About **64.6 x 110.8 x 6.6 mm**.
 
 - **Panel** at the top, behind a front frame 3 mm wide at the sides and top. The frame
   covers the panel edge and overlaps the active area by 0.5 mm per side (the masking idea).
@@ -51,11 +51,13 @@ About **64.6 x 110.8 x 6.7 mm**.
   - Size the pockets about 0.2 mm over the magnet and fit them all with the same pole
     facing out.
   - Holding force through a 0.4 mm skin is a little lower than touching.
-- **Depth:** 1.0 front wall + inner 4.7 + 1.0 back wall. With Erik's measured XIAO (2.8
-  without the USB-C, 4.4 with it), the **USB-C sets it**: it must stay flush with the back
-  face, so front wall + 0.3 clearance + ~1.0 wire joints + 4.4 = 6.7. Flatter joints
-  (<= 0.9) let the panel + battery stack (4.0 + 0.6) set it instead: 6.6. A thinner battery
-  saves nothing more unless the chin is raised (thicker than the photo area).
+- **Depth:** 1.0 front wall + inner 4.6 + 1.0 back wall = 6.6. The **panel + battery** stack
+  (4.0 + 2 x 0.3 clearance) sets it. Under the XIAO, Erik plans **0.75 mm for clearance plus
+  wire joints** (`XiaoGap`), so with 0.3 clearance the joints must be ~0.45 mm or flatter.
+  With the measured XIAO (2.8 without the USB-C, 4.4 with it), the USB-C then sits 0.45 mm
+  inside the back face. The model also keeps the USB-C from ever sticking out: with
+  `XiaoGap` above ~1.2 the USB-C sets the depth instead (1.3 gives 6.7). A thinner battery
+  saves nothing more unless the chin is raised.
 
 ## Assembly (Erik's choices)
 

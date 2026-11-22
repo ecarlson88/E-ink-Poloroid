@@ -130,14 +130,6 @@
  {
   "command": "parameters.add",
   "params": {
-   "name": "Joint",
-   "expression": "1 mm",
-   "comment": "battery wire joints on the XIAO underside pads (guess)"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
    "name": "UsbOver",
    "expression": "1.5 mm",
    "comment": "USB-C overhang past the XIAO edge"
@@ -197,6 +189,14 @@
    "name": "Clear",
    "expression": "0.3 mm",
    "comment": "gap around parts"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "XiaoGap",
+   "expression": "0.75 mm",
+   "comment": "space between the front wall and the XIAO's underside: clearance plus battery wire joints (Erik)"
   }
  },
  {
@@ -389,6 +389,14 @@
    "name": "CaseH",
    "expression": "ChinH + PanelH + 2 * Clear + TopFrame",
    "comment": "overall height"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "Joint",
+   "expression": "XiaoGap - Clear",
+   "comment": "room left for the battery wire joints on the XIAO's underside pads"
   }
  },
  {
@@ -1169,42 +1177,42 @@
     [
      32.3,
      0,
-     6.7
+     6.6
     ],
     [
      32.3,
      110.84,
-     6.7
+     6.6
     ],
     [
      0,
      55.42,
-     6.7
+     6.6
     ],
     [
      1.1715728752538102,
      1.1715728752538102,
-     6.7
+     6.6
     ],
     [
      63.428427124746186,
      1.1715728752538102,
-     6.7
+     6.6
     ],
     [
      63.428427124746186,
      109.66842712474619,
-     6.7
+     6.6
     ],
     [
      1.1715728752538102,
      109.66842712474619,
-     6.7
+     6.6
     ],
     [
      64.6,
      55.42,
-     6.7
+     6.6
     ]
    ],
    "radius": "FrontR",
@@ -1219,42 +1227,42 @@
     [
      32.3,
      0,
-     5.7
+     5.6
     ],
     [
      32.3,
      110.84,
-     5.7
+     5.6
     ],
     [
      0,
      55.42,
-     5.7
+     5.6
     ],
     [
      1.1715728752538102,
      1.1715728752538102,
-     5.7
+     5.6
     ],
     [
      63.428427124746186,
      1.1715728752538102,
-     5.7
+     5.6
     ],
     [
      63.428427124746186,
      109.66842712474619,
-     5.7
+     5.6
     ],
     [
      1.1715728752538102,
      109.66842712474619,
-     5.7
+     5.6
     ],
     [
      64.6,
      55.42,
-     5.7
+     5.6
     ]
    ],
    "radius": "SeamR",
@@ -1269,47 +1277,47 @@
     [
      32.3,
      0,
-     5.7
+     5.6
     ],
     [
      32.3,
      110.84,
-     5.7
+     5.6
     ],
     [
      0,
      55.42,
-     5.7
+     5.6
     ],
     [
      1.1715728752538102,
      1.1715728752538102,
-     5.7
+     5.6
     ],
     [
      63.428427124746186,
      1.1715728752538102,
-     5.7
+     5.6
     ],
     [
      63.428427124746186,
      109.66842712474619,
-     5.7
+     5.6
     ],
     [
      1.1715728752538102,
      109.66842712474619,
-     5.7
+     5.6
     ],
     [
      64.6,
      4.825,
-     5.7
+     5.6
     ],
     [
      64.6,
      55.42,
-     5.7
+     5.6
     ]
    ],
    "radius": "SeamR",
@@ -1379,22 +1387,22 @@
     [
      32.3,
      28.450000000000003,
-     6.7
+     6.6
     ],
     [
      32.3,
      104.49000000000001,
-     6.7
+     6.6
     ],
     [
      7.0,
      66.47,
-     6.7
+     6.6
     ],
     [
      57.6,
      66.47,
-     6.7
+     6.6
     ]
    ],
    "distance": "WinChamfer",

@@ -44,7 +44,6 @@ PARAMS = [
     ("XiaoH", "17.8 mm", "XIAO ESP32-S3 width"),
     ("XiaoBodyT", "2.8 mm", "XIAO height without the USB-C (Erik measured 2.8; STEP model said 3.25)"),
     ("XiaoT", "4.4 mm", "XIAO height to the top of the USB-C (Erik measured 4.4; STEP model said 4.46)"),
-    ("Joint", "1 mm", "battery wire joints on the XIAO underside pads (guess)"),
     ("UsbOver", "1.5 mm", "USB-C overhang past the XIAO edge"),
     ("UsbW", "8.9 mm", "USB-C receptacle width"),
     ("UsbLen", "7.3 mm", "USB-C receptacle length including the overhang"),
@@ -55,6 +54,7 @@ PARAMS = [
     ("MagT", "1 mm", "magnet bar thickness"),
     # Case choices
     ("Clear", "0.3 mm", "gap around parts"),
+    ("XiaoGap", "0.75 mm", "space between the front wall and the XIAO's underside: clearance plus battery wire joints (Erik)"),
     ("SideFrame", "3 mm", "frame width beside the panel"),
     ("TopFrame", "3 mm", "frame width above the panel"),
     ("Fold", "2 mm", "room under the panel for the cable fold"),
@@ -81,6 +81,7 @@ PARAMS = [
     ("CaseW", "PanelW + 2 * (SideFrame + Clear)", "overall width"),
     ("ChinH", "Fold + XiaoH + 2 * Clear + ChinWall", "chin height"),
     ("CaseH", "ChinH + PanelH + 2 * Clear + TopFrame", "overall height"),
+    ("Joint", "XiaoGap - Clear", "room left for the battery wire joints on the XIAO's underside pads"),
     ("InnerD", "max(max(PanelT + max(BattT, AdapterT), Joint + XiaoBodyT) + 2 * Clear, Clear + Joint + XiaoT - BackWall)",
      "inside depth: the thickest stack, and deep enough that the USB-C (through the back notch) stays flush with the back face"),
     ("ShellH", "BackWall + InnerD", "back shell height; the front frame sits on it"),
