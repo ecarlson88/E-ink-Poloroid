@@ -36,6 +36,22 @@ for what, got, want in (("lip top flush with the sheet face", tray_top, env["She
     good = abs(got - want) < 0.01
     ok &= good
     print(f"{'ok  ' if good else 'FAIL'} {what}: {got:.3f} (want {want:.3f})")
+# The chin strip (a separate flat part, printed on the bed): LedgeT thick, its top flush with the rim,
+# stopping short of the USB-C notch; it rests on a step in the tray's bottom and left walls.
+strip = bodies.get("ChinStrip")
+if strip is None:
+    ok = False
+    print("FAIL chin strip: no ChinStrip body (the ledge must be a separate part to print without supports)")
+else:
+    notch_x0 = env["UsbCX"] - env["UsbW"] / 2 - env["Clear"]
+    for what, got, want in (("chin strip bottom", strip["min"][2], env["ShellH"] - mask - tape - env["LedgeT"]),
+                            ("chin strip top", strip["max"][2], env["ShellH"] - mask - tape)):
+        good = abs(got - want) < 0.01
+        ok &= good
+        print(f"{'ok  ' if good else 'FAIL'} {what}: {got:.3f} (want {want:.3f})")
+    good = strip["max"][0] <= notch_x0 + 1e-6
+    ok &= good
+    print(f"{'ok  ' if good else 'FAIL'} chin strip ends at x {strip['max'][0]:.2f}, left of the USB-C notch ({notch_x0:.2f})")
 rim = env["ShellH"] - mask - tape
 print(f"mask {mask:g} + tape {tape:g} between the rim ({rim:.2f}) and the sheet")
 sys.exit(0 if ok and tape > 0 else 1)

@@ -46,7 +46,8 @@ JOINT_FROM_END = (8.0, 10.1)            # BAT pads, from the XIAO's USB-C end (u
 JOINT_SPREAD = 1.5                      # solder and wire beyond the pads
 BATT_GAP = 1.0                          # adapter to battery (compact: 1.5)
 SW_X = 12.0                             # switch centre
-LEDGE_T = 0.8                           # chin ledge under the sheet (bonding area)
+LEDGE_T = 0.8                           # chin strip under the sheet (bonding area): a separate flat part,
+STRIP_STEP = 0.4                        # resting on a step this deep in the bottom and left walls (no overhang)
 MAG_D, MAG_T, MAG_SKIN, MAG_GAP = 8.0, 0.6, 0.4, 0.2   # Erik's discs (measured 0.6), flush in the back wall
 RIB_T, RIB_GAP, CORNER_R = 1.2, 30.0, 4.0
 PIN_D = 1.2
@@ -91,11 +92,12 @@ inner_top = CASE_H - WALL
 switch = (SW_X - SW_W / 2, CHIN_WALL, SW_W, SW_D)
 backstop = (SW_X - SW_W / 2 - 1.0, CHIN_WALL + SW_D, SW_W + 2.0, RIB_T)
 ledge_top = panel_y - FOLD - CLEAR
-ledge = (WALL, CHIN_WALL, CASE_W - 2 * WALL, ledge_top - CHIN_WALL)
+ledge = (WALL - STRIP_STEP, CHIN_WALL - STRIP_STEP, notch[0] - (WALL - STRIP_STEP),
+         ledge_top - (CHIN_WALL - STRIP_STEP))                       # chin strip, up to the USB-C notch
 # Antenna (Erik: option A): stuck to the back of the ledge, left of the USB-C notch, against the bottom wall
 ant = (WALL + CLEAR, CHIN_WALL, ANT_L, ANT_H)
 z_bond = SHEET_T + MASK_T + TAPE_T                   # where the rim, rib and ledge stop
-z_ant = z_bond + LEDGE_T                             # antenna's front face, on the back of the ledge
+z_ant = z_bond + LEDGE_T                             # antenna's front face, on the back of the chin strip
 joint_y0 = xiao_y0 + JOINT_FROM_END[0] - JOINT_SPREAD  # lowest point of the battery joints
 rib = (WALL, panel_y - CLEAR - RIB_T, CASE_W / 2 - RIB_GAP / 2 - WALL, RIB_T)
 
@@ -176,7 +178,7 @@ ax.add_patch(Circle(pin, PIN_D / 2, fc="white", ec=INK))
 ax.annotate("rear reset pinhole", pin, (CASE_W + 1, 10), fontsize=7, color=INK, arrowprops=dict(arrowstyle="-", color=INK, lw=0.7))
 box(ax, ledge, None, color=PURPLE, ls=":", fill="#EADCF3", alpha=0.45)
 box(ax, ant, None, color=PURPLE, ls="--")
-ax.text(ant[0] + 16, ant[1] + ant[3] / 2, f"antenna {ANT_L:g} x {ANT_H:g} on the back of the chin ledge", va="center", fontsize=6, color=PURPLE)
+ax.text(ant[0] + 10, ant[1] + ant[3] / 2, f"antenna {ANT_L:g} x {ANT_H:g} on the back of the chin strip (separate part)", va="center", fontsize=6, color=PURPLE)
 box(ax, switch, None, color=INK, fill="#C9CDD3")
 box(ax, backstop, None, color=INK, fill="#8E949C")
 ax.add_patch(Rectangle((SW_X - PLUNGER_W / 2, 0), PLUNGER_W, CHIN_WALL, fc="white", ec=INK))
@@ -198,7 +200,7 @@ a.add_patch(Rectangle((0, 0), T, CASE_H, fc="#FFFFFF", ec=INK, lw=2))
 box(a, (0, 0, SHEET_T, CASE_H), None, color=BLUE, fill="#E4EEF9")
 box(a, (SHEET_T, 0, MASK_T, CASE_H), None, color=MUTED, fill="#FFFFFF")
 box(a, (SHEET_T + MASK_T, panel_y, PANEL_T, PANEL_H), color=MUTED, fill="#DCE6F2")
-box(a, (z_bond, CHIN_WALL, LEDGE_T, ledge[3]), None, color=PURPLE, fill="#EADCF3")
+box(a, (z_bond, ledge[1], LEDGE_T, ledge[3]), None, color=PURPLE, fill="#EADCF3")
 box(a, (z_pads, xiao_y0, XIAO_BODY_T, XIAO_L), color=GREEN, fill="#D6EEDD")
 box(a, (z_pads, 0, XIAO_T, USB_LEN), color=GREEN, fill="#7FBF94")
 a.add_patch(Rectangle((T - BACK_WALL - 0.01, -0.01), BACK_WALL + 0.02, USB_LEN + CLEAR, fc="white", ec="none"))
@@ -225,7 +227,7 @@ fig.savefig(out, dpi=110)
 print(f"case {CASE_W:.1f} x {CASE_H:.2f} x {T:.2f}; inner depth {INNER:.2f}; picture {win_w:.1f} x {win_h:.1f}, "
       f"chin (bottom edge to picture) {chin:.1f} = {chin / CASE_H:.0%}, side border {win[0]:.1f}")
 print(f"XIAO x {xiao_x0:.1f}..{xiao_x1:.1f}, y {xiao_y0:.1f}..{xiao_y1:.1f}; rear pinhole at ({pin[0]:.1f}, {pin[1]:.1f})")
-print(f"switch centre x {SW_X:g}, body {SW_W:g} x {SW_D:g} x {SW_T:g}; ledge {ledge[2]:.1f} x {ledge[3]:.1f} x {LEDGE_T:g}, "
+print(f"switch centre x {SW_X:g}, body {SW_W:g} x {SW_D:g} x {SW_T:g}; chin strip {ledge[2]:.1f} x {ledge[3]:.1f} x {LEDGE_T:g}, "
       f"antenna to the XIAO underside {ledge_room:.2f}; joints from y {joint_y0:.1f}")
 print(f"bond stack: rim at {T - z_bond:.2f} from the back, then mask {MASK_T:g} + tape {TAPE_T:g} + sheet {SHEET_T:g}")
 print(f"battery top {batt[1] + BATT_H:.2f} vs inner top {inner_top:.2f}; discs at " + ", ".join(f"({x:.1f}, {y:.1f})" for x, y in discs))
