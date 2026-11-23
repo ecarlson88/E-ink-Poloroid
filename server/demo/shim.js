@@ -4,11 +4,15 @@
 (() => {
   const PALETTE = [[0, 0, 0], [255, 255, 255], [255, 255, 0], [255, 0, 0], [0, 0, 255], [0, 255, 0]];
   const PW = 480, PH = 640, RATIO = 3 / 4, LOW_MV = 3500;
-  const state = { auth: false, photos: [], queue: [], current: null, lastSeen: null, battery: null, nextId: 1 };
+  const state = { auth: false, photos: [], devices: [], nextId: 1, nextDevice: 1 };
+  // A magnet: { id, name, paired, code, expires, queue, current, lastSeen, battery, photoIds: Set }
 
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
   const detail = (msg, status) => json({ detail: msg }, status);
   const byId = (id) => state.photos.find((p) => p.id === id);
+  const dev = (id) => state.devices.find((d) => d.id === id);
+  const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const newCode = () => { let c = ""; for (let i = 0; i < 8; i++) c += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return c.slice(0, 4) + "-" + c.slice(4); };
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   function defaultCrop(w, h) {
@@ -85,21 +89,34 @@
     if (bad) { URL.revokeObjectURL(loaded.url); return detail(bad, 400); }
     const p = { id: state.nextId++, created_at: createdAt || Date.now() / 1000, width: W, height: H, crop: c, img: loaded.img, urls: { original: loaded.url } };
     await renderViews(p);
-    state.photos.push(p);
-    state.queue.splice(Math.floor(Math.random() * (state.queue.length + 1)), 0, p.id);
+    state.photos.push(p);   // uploads go to the library only
     return json({ id: p.id });
   }
 
-  function validQueue() { return state.queue.filter((id) => byId(id)); }
-  function pickNext() {   // what the magnet's daily wake does: take the head of the shuffle
-    let q = validQueue();
-    if (!q.length) q = shuffle(state.photos.map((p) => p.id));
-    if (!q.length) return null;
+  const selected = (d) => state.photos.map((p) => p.id).filter((id) => d.photoIds.has(id));
+  function validQueue(d) { return d.queue.filter((id) => d.photoIds.has(id) && byId(id)); }
+  function pickNext(d) {   // what a magnet's daily wake does: take the head of its own shuffle
+    let q = validQueue(d);
+    if (!q.length) q = shuffle(selected(d));
+    if (!q.length) { d.current = null; return null; }
     const id = q.shift();
-    if (!q.length) { q = shuffle(state.photos.map((p) => p.id)); if (q.length > 1 && q[0] === id) [q[0], q[1]] = [q[1], q[0]]; }
-    state.queue = q; state.current = id;
+    if (!q.length) { q = shuffle(selected(d)); if (q.length > 1 && q[0] === id) [q[0], q[1]] = [q[1], q[0]]; }
+    d.queue = q; d.current = id;
     return id;
   }
+  function newDevice(name) {
+    const d = { id: state.nextDevice++, name, paired: false, code: newCode(), expires: Date.now() / 1000 + 86400,
+                queue: [], current: null, lastSeen: null, battery: null, photoIds: new Set() };
+    state.devices.push(d);
+    return d;
+  }
+  function deviceJSON(d) {
+    const q = validQueue(d);
+    return { id: d.id, name: d.name, paired: d.paired, pairing_expires: d.code ? d.expires : null, last_seen: d.lastSeen,
+             battery_mv: d.battery, battery_low: d.battery != null && d.battery < LOW_MV, current_id: d.current,
+             next_id: q.length ? q[0] : null, photo_ids: selected(d) };
+  }
+  const cleanName = (v) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "");
 
   const realFetch = window.fetch.bind(window);
   window.fetch = async (input, opts = {}) => {
@@ -126,21 +143,45 @@
       if (crop) { try { c = JSON.parse(crop); } catch { return detail("the crop is not valid JSON", 400); } }
       return addPhoto(file, c);
     }
-    if (path === "/api/status") {
-      const q = validQueue();
-      return json({ last_seen: state.lastSeen, battery_mv: state.battery, battery_low: state.battery != null && state.battery < LOW_MV,
-                    current_id: state.current, next_id: q.length ? q[0] : null });
+    if (path === "/api/devices" && method === "GET") return json(state.devices.map(deviceJSON));
+    if (path === "/api/devices" && method === "POST") {
+      const name = cleanName(JSON.parse(opts.body).name);
+      if (!name || name.length > 60) return detail("give the magnet a name of 1 to 60 characters", 400);
+      const d = newDevice(name);
+      return json({ id: d.id, name: d.name, pair_code: d.code, pair_expires: d.expires });
+    }
+    if ((m = path.match(/^\/api\/devices\/(\d+)$/))) {
+      const d = dev(+m[1]); if (!d) return detail("no such magnet", 404);
+      if (method === "DELETE") { state.devices = state.devices.filter((x) => x !== d); return json({ ok: true }); }
+      const name = cleanName(JSON.parse(opts.body).name);
+      if (!name || name.length > 60) return detail("give the magnet a name of 1 to 60 characters", 400);
+      d.name = name; return json({ ok: true });
+    }
+    if ((m = path.match(/^\/api\/devices\/(\d+)\/pair-code$/))) {
+      const d = dev(+m[1]); if (!d) return detail("no such magnet", 404);
+      d.code = newCode(); d.expires = Date.now() / 1000 + 86400;
+      return json({ pair_code: d.code, pair_expires: d.expires });
+    }
+    if ((m = path.match(/^\/api\/devices\/(\d+)\/photos\/(\d+)(\/next)?$/))) {
+      const d = dev(+m[1]), id = +m[2];
+      if (!d) return detail("no such magnet", 404);
+      if (!byId(id)) return detail("no such photo", 404);
+      if (m[3]) {
+        if (!d.photoIds.has(id)) return detail("that photo is not on this magnet", 409);
+        d.queue = [id, ...validQueue(d).filter((x) => x !== id)]; return json({ ok: true });
+      }
+      if (method === "PUT" && !d.photoIds.has(id)) {
+        d.photoIds.add(id);
+        const q = validQueue(d); q.splice(Math.floor(Math.random() * (q.length + 1)), 0, id); d.queue = q;
+      }
+      if (method === "DELETE") { d.photoIds.delete(id); d.queue = d.queue.filter((x) => x !== id); if (d.current === id) d.current = null; }
+      return json({ ok: true });
     }
     if ((m = path.match(/^\/api\/photos\/(\d+)$/)) && method === "DELETE") {
       const id = +m[1], p = byId(id);
       if (p) { Object.values(p.urls).forEach((u) => URL.revokeObjectURL(u)); state.photos = state.photos.filter((x) => x.id !== id); }
-      state.queue = state.queue.filter((x) => x !== id);
-      if (state.current === id) state.current = null;
+      for (const d of state.devices) { d.photoIds.delete(id); d.queue = d.queue.filter((x) => x !== id); if (d.current === id) d.current = null; }
       return json({ ok: true });
-    }
-    if ((m = path.match(/^\/api\/photos\/(\d+)\/next$/))) {
-      const id = +m[1]; if (!byId(id)) return detail("no such photo", 404);
-      state.queue = [id, ...state.queue.filter((x) => x !== id)]; return json({ ok: true });
     }
     if ((m = path.match(/^\/api\/photos\/(\d+)\/crop$/)) && method === "PUT") {
       const p = byId(+m[1]); if (!p) return detail("no such photo", 404);
@@ -206,17 +247,28 @@
   ];
 
   async function seed() {
-    state.photos = []; state.queue = []; state.current = null; state.nextId = 1;
+    state.photos = []; state.devices = []; state.nextId = 1; state.nextDevice = 1;
     const day = 86400;
     const now = Date.now() / 1000;
     for (const [i, [w, h, draw]] of samples.entries()) await addPhoto(await scene(w, h, draw), null, now - (samples.length - i) * 3 * day);
-    pickNext();
-    state.lastSeen = now - 5 * 3600; state.battery = 3920;
+    const home = newDevice("Mom & Dad"), inLaws = newDevice("In-laws");
+    for (const [d, ids, seen, mv] of [[home, [1, 2, 3, 4], 5, 3920], [inLaws, [2, 4], 20, 4050]]) {
+      d.paired = true; d.code = null; ids.forEach((id) => d.photoIds.add(id));
+      pickNext(d); d.lastSeen = now - seen * 3600; d.battery = mv;
+    }
   }
+  // The demo buttons act on the magnet being looked at; on the Library tab, on every magnet.
+  const targets = (id) => (id === "library" ? state.devices : state.devices.filter((d) => d.id === id));
   window.__demo = {
     ready: seed(),
-    async checkIn() { pickNext(); state.lastSeen = Date.now() / 1000; state.battery = Math.max(3300, (state.battery || 4100) - 8 - Math.round(Math.random() * 10)); },
-    lowBattery() { state.lastSeen = Date.now() / 1000; state.battery = 3410; },
+    async checkIn(id) {
+      for (const d of targets(id)) {
+        if (!d.paired) { if (!d.code) continue; d.paired = true; }   // as if the code was typed on its setup page
+        d.code = null;
+        pickNext(d); d.lastSeen = Date.now() / 1000; d.battery = Math.max(3300, (d.battery || 4100) - 8 - Math.round(Math.random() * 10));
+      }
+    },
+    lowBattery(id) { for (const d of targets(id)) if (d.paired) { d.lastSeen = Date.now() / 1000; d.battery = 3410; } },
     async reset() { state.photos.forEach((p) => Object.values(p.urls).forEach((u) => URL.revokeObjectURL(u))); await seed(); },
   };
 })();

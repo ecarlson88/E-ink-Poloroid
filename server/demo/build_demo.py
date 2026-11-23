@@ -32,7 +32,7 @@ main = '<main class="wrap" id="app" hidden>'
 assert s.count(main) == 1
 s = s.replace(main, main + """
   <section class="demo-band" aria-label="Demo controls">
-    <span><b>Demo.</b> Everything stays in your browser. Try the magnet's side too:</span>
+    <span><b>Demo.</b> Everything stays in your browser. Act as the magnet you're looking at (on Library, all of them):</span>
     <button type="button" id="demo-wake">Magnet wakes up</button>
     <button type="button" id="demo-low">Battery low</button>
     <button type="button" id="demo-reset">Reset demo</button>
@@ -44,9 +44,9 @@ i = s.index("<script>")
 s = s[:i] + "<script>\n" + shim + "\n</script>\n" + s[i:]
 s = s.rstrip() + """
 <script>
-$("demo-wake").onclick = async () => { await window.__demo.checkIn(); refresh(); };
-$("demo-low").onclick = async () => { await window.__demo.lowBattery(); refresh(); };
-$("demo-reset").onclick = async () => { panelView.clear(); await window.__demo.reset(); refresh(); };
+$("demo-wake").onclick = async () => { await window.__demo.checkIn(view); refresh(); };
+$("demo-low").onclick = async () => { await window.__demo.lowBattery(view); refresh(); };
+$("demo-reset").onclick = async () => { panelView.clear(); await window.__demo.reset(); setView("library"); refresh(); };
 </script>
 """
 Path(sys.argv[1]).write_text(s)

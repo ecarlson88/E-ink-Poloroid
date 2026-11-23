@@ -72,6 +72,33 @@
   .chin .date, .chin button { white-space: nowrap; }
   .chin .acts { display: flex; gap: 12px; margin-left: auto; }
 
+  /* Magnets: Library plus one tab per magnet */
+  .tabs { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tab { flex: none; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .tab.on { background: var(--ink); border-color: var(--ink); color: #FFF; }
+  .tab.add { border-style: dashed; color: var(--muted); }
+  .tab .mini { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .tab.on .mini { color: #C9CDD3; }
+  .magnet-tools { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .magnet-tools button { border: none; background: none; padding: 0; min-height: 36px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .magnet-tools button.armed { color: var(--warn); }
+  .pairing { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 1px dashed #B9C0CA; background: var(--card); font-size: 13px; color: var(--muted); }
+  .pairing b { color: var(--ink); }
+  .card.off .photo { opacity: .45; }
+  .on-list { width: 100%; font-size: 11px; color: var(--muted); padding-bottom: 6px; margin-top: -8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* On a magnet's tab: a circle in the photo's corner, checked when the photo is on that magnet */
+  .pick { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border: none; background: none; display: grid; place-items: center; }
+  .pick span { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.92); box-shadow: inset 0 0 0 2px #9AA3AE; display: grid; place-items: center; color: transparent; }
+  .pick.on span { background: var(--good); box-shadow: none; color: #FFF; }
+
+  /* Magnet dialog: add, rename, pairing code */
+  dialog#magnet-dlg { border: none; border-radius: 14px; padding: 18px; max-width: min(420px, calc(100vw - 24px)); width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  dialog#magnet-dlg::backdrop { background: rgba(21,23,26,.55); }
+  #magnet-dlg h2 { margin: 0 0 6px; font-size: 17px; }
+  #magnet-dlg p { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+  #magnet-dlg input { width: 100%; font: inherit; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; min-height: 48px; }
+  .code { margin: 6px 0 12px; font: 700 30px/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .08em; text-align: center; padding: 14px; border-radius: 12px; background: var(--bg); user-select: all; }
+
   /* Crop editor */
   dialog#cropper { border: none; border-radius: 14px; padding: 16px; max-width: min(560px, calc(100vw - 24px)); width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
   dialog#cropper::backdrop { background: rgba(21,23,26,.55); }
@@ -113,11 +140,21 @@
     </button>
   </header>
 
-  <section class="status" aria-label="Magnet status">
-    <div><span>Checked in</span><strong id="seen">–</strong></div>
-    <div><span>Battery</span><strong id="battery">–</strong></div>
-    <div><span>Showing</span><strong id="showing">–</strong></div>
-  </section>
+  <nav class="tabs" id="tabs" aria-label="Library and magnets"></nav>
+
+  <div id="magnet-panel" hidden>
+    <section class="status" aria-label="Magnet status">
+      <div><span>Checked in</span><strong id="seen">–</strong></div>
+      <div><span>Battery</span><strong id="battery">–</strong></div>
+      <div><span>Showing</span><strong id="showing">–</strong></div>
+    </section>
+    <p class="pairing" id="pairing" hidden></p>
+    <div class="magnet-tools">
+      <button type="button" id="m-rename">Rename</button>
+      <button type="button" id="m-code">New pairing code</button>
+      <button type="button" id="m-remove">Remove magnet</button>
+    </div>
+  </div>
 
   <button type="button" class="drop" id="drop">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
@@ -128,8 +165,21 @@
 
   <p class="hint" id="hint">Tap a photo to see it in the magnet's colors.</p>
   <div class="grid" id="grid"></div>
-  <p class="empty" id="empty" hidden>No photos yet. Add some and the magnet will pick a new one each morning.</p>
+  <p class="empty" id="empty" hidden>No photos yet. Add some, then choose which magnets show them.</p>
 </main>
+
+<dialog id="magnet-dlg" aria-labelledby="m-title">
+  <form method="dialog" id="m-form">
+    <h2 id="m-title"></h2>
+    <p id="m-text"></p>
+    <div class="code" id="m-code-box" hidden></div>
+    <input id="m-name" name="name" maxlength="60" autocomplete="off" aria-label="Magnet name" placeholder="e.g. Grandma &amp; Grandpa">
+    <div class="crop-actions">
+      <button type="button" id="m-cancel">Cancel</button>
+      <button type="submit" id="m-ok" class="primary">Add</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="cropper" aria-labelledby="crop-title">
   <h2 id="crop-title">Frame the photo</h2>
@@ -145,10 +195,13 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
+const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
 const LOW_MV = 3500;
 let photos = [];
-let status = {};
+let magnets = [];
+let view = "library";   // "library", or the id of the magnet being looked at
+try { const v = localStorage.getItem("view"); if (v) view = v === "library" ? v : Number(v); } catch (e) { /* storage blocked */ }
 const panelView = new Set();  // photo ids currently showing the magnet preview
 
 const shortDate = (t) => new Date(t * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -164,7 +217,7 @@ function seenText(t) {
 
 function el(tag, props = {}, ...kids) {
   const e = Object.assign(document.createElement(tag), props);
-  e.append(...kids);
+  e.append(...kids.filter((k) => k != null));
   return e;
 }
 
@@ -173,6 +226,7 @@ async function api(path, opts) {
   if (r.status === 401) { show(false); throw new Error("login required"); }
   return r;
 }
+const sendJSON = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
 function show(loggedIn) {
   $("login").hidden = loggedIn;
@@ -180,24 +234,143 @@ function show(loggedIn) {
   if (!loggedIn) $("password").focus();
 }
 
-function renderStatus() {
-  $("seen").textContent = seenText(status.last_seen);
+const magnet = () => magnets.find((m) => m.id === view);
+function setView(v) {
+  view = v;
+  try { localStorage.setItem("view", String(v)); } catch (e) { /* storage blocked */ }
+  renderAll();
+}
+
+// Press twice: the first tap arms the button for 4 seconds (tapping elsewhere cancels); the second acts.
+function pressTwice(btn, armedHTML, action) {
+  const restHTML = btn.innerHTML, restLabel = btn.ariaLabel, restTitle = btn.title;
+  let timer = null;
+  const disarm = () => {
+    clearTimeout(timer); timer = null;
+    btn.classList.remove("armed"); btn.innerHTML = restHTML; btn.ariaLabel = restLabel; btn.title = restTitle;
+    removeEventListener("pointerdown", outside, true);
+  };
+  const outside = (e) => { if (!btn.contains(e.target)) disarm(); };
+  btn.onclick = async () => {
+    if (!timer) {
+      btn.classList.add("armed"); btn.innerHTML = armedHTML;
+      btn.ariaLabel = "Tap again to confirm"; btn.title = "Tap again to confirm";
+      timer = setTimeout(disarm, 4000);
+      addEventListener("pointerdown", outside, true);
+      return;
+    }
+    disarm();
+    await action();
+  };
+}
+
+function renderTabs() {
+  const tab = (label, v, extra) => el("button", {
+    type: "button", className: "tab" + (view === v ? " on" : ""), ariaPressed: String(view === v), onclick: () => setView(v),
+  }, label, extra);
+  const tabs = [tab("Library", "library")];
+  for (const m of magnets) {
+    const extra = m.battery_low ? el("span", { className: "dot", style: "background: var(--warn)", title: "Battery low" })
+      : !m.paired ? el("span", { className: "mini", textContent: "not paired" }) : null;
+    tabs.push(tab(m.name, m.id, extra));
+  }
+  tabs.push(el("button", { type: "button", className: "tab add", textContent: "+ Add magnet", onclick: addMagnet }));
+  $("tabs").replaceChildren(...tabs);
+}
+
+function renderMagnetPanel() {
+  const m = magnet();
+  $("magnet-panel").hidden = !m;
+  if (!m) return;
+  $("seen").textContent = seenText(m.last_seen);
   const bat = $("battery");
   bat.replaceChildren();
-  if (status.battery_mv == null) bat.textContent = "–";
+  bat.style.color = "";
+  if (m.battery_mv == null) bat.textContent = "–";
   else {
-    const low = status.battery_low;
-    bat.append(el("span", { className: "dot", style: `background: var(${low ? "--warn" : "--good"})` }),
-               (status.battery_mv / 1000).toFixed(2) + " V" + (low ? " · low" : ""));
-    bat.style.color = low ? "var(--warn)" : "";
+    bat.append(el("span", { className: "dot", style: `background: var(${m.battery_low ? "--warn" : "--good"})` }),
+               (m.battery_mv / 1000).toFixed(2) + " V" + (m.battery_low ? " · low" : ""));
+    if (m.battery_low) bat.style.color = "var(--warn)";
   }
-  const cur = photos.find((p) => p.id === status.current_id);
+  const cur = photos.find((p) => p.id === m.current_id);
   $("showing").textContent = cur ? shortDate(cur.created_at) : "–";
+  const pairing = $("pairing");
+  pairing.hidden = m.paired && !m.pairing_expires;
+  if (!pairing.hidden) {
+    const hours = m.pairing_expires ? Math.max(1, Math.round((m.pairing_expires * 1000 - Date.now()) / 36e5)) : 0;
+    pairing.replaceChildren(
+      el("b", { textContent: m.paired ? "A new pairing code is waiting. " : "Not paired yet. " }),
+      m.pairing_expires
+        ? `On the magnet's Wi-Fi setup page, type the pairing code you were shown. It works for about ${hours} more hour${hours === 1 ? "" : "s"}.`
+        : "The pairing code has expired. Tap \u201cNew pairing code\u201d for another.");
+  }
+  $("m-rename").onclick = async () => {
+    const name = await magnetDialog({ title: "Rename the magnet", text: "", name: m.name, ok: "Save" });
+    if (name == null) return;
+    const r = await api(`/api/devices/${m.id}`, sendJSON("PATCH", { name }));
+    $("msg").textContent = r.ok ? "" : (await r.json()).detail;
+    refresh();
+  };
+  $("m-code").onclick = async () => {
+    const r = await api(`/api/devices/${m.id}/pair-code`, { method: "POST" });
+    await showCode(m.name, (await r.json()).pair_code, m.paired);
+    refresh();
+  };
+  const remove = $("m-remove");
+  remove.innerHTML = "Remove magnet";
+  pressTwice(remove, "Tap again to remove", async () => {
+    await api(`/api/devices/${m.id}`, { method: "DELETE" });
+    setView("library");
+    refresh();
+  });
+}
+
+// One dialog for adding and renaming a magnet, and for showing a pairing code.
+function magnetDialog({ title, text, name, ok, code }) {
+  const dlg = $("magnet-dlg");
+  $("m-title").textContent = title;
+  $("m-text").textContent = text;
+  $("m-code-box").hidden = !code;
+  $("m-code-box").textContent = code || "";
+  $("m-name").hidden = !!code;
+  $("m-name").value = name || "";
+  $("m-ok").textContent = ok;
+  $("m-cancel").hidden = !!code;
+  return new Promise((resolve) => {
+    const done = (value) => { dlg.close(); resolve(value); };
+    $("m-form").onsubmit = (e) => { e.preventDefault(); done(code ? true : $("m-name").value.trim() || null); };
+    $("m-cancel").onclick = () => done(null);
+    dlg.oncancel = (e) => { e.preventDefault(); done(null); };
+    dlg.showModal();
+    if (!code) $("m-name").focus();
+  });
+}
+
+const showCode = (name, code, replacing) => magnetDialog({
+  title: `Pairing code for ${name}`,
+  text: "On the magnet's Wi-Fi setup page, type this code. It works once, for 24 hours." +
+        (replacing ? " The magnet keeps working with its old key until the new code is used." : ""),
+  code, ok: "Done",
+});
+
+async function addMagnet() {
+  const name = await magnetDialog({ title: "Add a magnet", text: "Give it a name you'll recognise.", name: "", ok: "Add" });
+  if (name == null) return;
+  const r = await api("/api/devices", sendJSON("POST", { name }));
+  if (!r.ok) { $("msg").textContent = (await r.json()).detail; return; }
+  const m = await r.json();
+  view = m.id;
+  try { localStorage.setItem("view", String(m.id)); } catch (e) { /* storage blocked */ }
+  await refresh();
+  await showCode(m.name, m.pair_code, false);
 }
 
 function card(p) {
+  const m = magnet();
+  const onIt = m ? m.photo_ids.includes(p.id) : false;
+  const many = m && m.photo_ids.length > 1;
+  const isNow = m && onIt && p.id === m.current_id, isNext = m && onIt && many && p.id === m.next_id;
   const panel = panelView.has(p.id);
-  const isNow = p.id === status.current_id, isNext = p.id === status.next_id;
   const v = p.crop ? [p.crop.x, p.crop.y, p.crop.w].map((n) => n.toFixed(4)).join("") : "0";   // new crop, new image
   const img = el("img", { alt: "", loading: "lazy", src: `/api/photos/${p.id}/image?view=${panel ? "panel" : "photo"}&v=${v}` });
   const photo = el("button", {
@@ -206,67 +379,84 @@ function card(p) {
     onclick: () => { panel ? panelView.delete(p.id) : panelView.add(p.id); renderGrid(); },
   }, img);
   if (panel) photo.append(el("span", { className: "pill view", textContent: "Magnet preview" }));
-  const fig = el("figure", { className: "card" + (isNext && photos.length > 1 ? " is-next" : "") }, photo);
-  if (isNext && photos.length > 1) fig.append(el("span", { className: "pill tag next", textContent: "Next up" }));
+  const fig = el("figure", { className: "card" + (isNext ? " is-next" : "") + (m && !onIt ? " off" : "") }, photo);
+  const date = el("span", { className: "date", textContent: shortDate(p.created_at) });
+  const acts = el("span", { className: "acts" });
+  const chin = el("figcaption", { className: "chin" }, date, acts);
+  fig.append(chin);
+
+  if (!m) {
+    // Library: manage the photo itself.
+    const del = el("button", { type: "button", className: "del", ariaLabel: "Delete photo", title: "Delete" });
+    del.innerHTML = "<span>" + TRASH + "</span>";
+    pressTwice(del, "<span>Delete?</span>", async () => {
+      await api(`/api/photos/${p.id}`, { method: "DELETE" });
+      panelView.delete(p.id);
+      refresh();
+    });
+    const cropBtn = el("button", { type: "button", textContent: "Crop", title: "Move what shows on the magnet" });
+    cropBtn.onclick = async () => {
+      const res = await editCrop(`/api/photos/${p.id}/image?view=original`, p.crop, { title: "Move the crop", ok: "Save", skip: "Cancel" });
+      if (res.action !== "ok" || !res.crop) return;
+      const r = await api(`/api/photos/${p.id}/crop`, sendJSON("PUT", res.crop));
+      $("msg").textContent = r.ok ? "" : (await r.json()).detail;
+      refresh();
+    };
+    acts.append(cropBtn);
+    const on = magnets.filter((x) => x.photo_ids.includes(p.id)).map((x) => x.name);
+    chin.append(el("span", { className: "on-list", textContent: on.length ? "On " + on.join(", ") : "Not on a magnet yet" }));
+    fig.append(del);
+    return fig;
+  }
+
+  // A magnet: choose which photos it shows, and what comes next.
+  if (isNext) fig.append(el("span", { className: "pill tag next", textContent: "Next up" }));
   else if (isNow) fig.append(el("span", { className: "pill tag now", textContent: "Showing now" }));
-  const del = el("button", { type: "button", className: "del", ariaLabel: "Delete photo", title: "Delete" });
-  del.innerHTML = "<span>" + TRASH + "</span>";
-  // Press twice: the first tap turns the button into "Delete?" for 4 seconds; a second tap deletes.
-  let timer = null;
-  const disarm = () => {
-    clearTimeout(timer); timer = null;
-    del.classList.remove("armed"); del.innerHTML = "<span>" + TRASH + "</span>";
-    del.ariaLabel = "Delete photo"; del.title = "Delete";
-    removeEventListener("pointerdown", outside, true);
-  };
-  const outside = (e) => { if (!del.contains(e.target)) disarm(); };
-  del.onclick = async () => {
-    if (!timer) {
-      del.classList.add("armed"); del.innerHTML = "<span>Delete?</span>";
-      del.ariaLabel = "Tap again to delete this photo"; del.title = "Tap again to delete";
-      timer = setTimeout(disarm, 4000);
-      addEventListener("pointerdown", outside, true);
-      return;
-    }
-    disarm();
-    await api(`/api/photos/${p.id}`, { method: "DELETE" });
-    panelView.delete(p.id);
+  const pick = el("button", { type: "button", className: "pick" + (onIt ? " on" : ""), role: "checkbox", ariaChecked: String(onIt),
+                              ariaLabel: `On ${m.name}`, title: onIt ? "Take it off this magnet" : "Put it on this magnet" });
+  pick.innerHTML = "<span>" + CHECK + "</span>";
+  pick.onclick = async () => {
+    await api(`/api/devices/${m.id}/photos/${p.id}`, { method: onIt ? "DELETE" : "PUT" });
     refresh();
   };
-  const nextBtn = el("button", { type: "button", textContent: isNext ? "Next up" : "Show next",
-                                 className: isNext ? "on" : "" });
-  if (isNext) nextBtn.disabled = true;
-  else nextBtn.onclick = async () => { await api(`/api/photos/${p.id}/next`, { method: "POST" }); refresh(); };
-  const cropBtn = el("button", { type: "button", textContent: "Crop", title: "Move what shows on the magnet" });
-  cropBtn.onclick = async () => {
-    const res = await editCrop(`/api/photos/${p.id}/image?view=original`, p.crop, { title: "Move the crop", ok: "Save", skip: "Cancel" });
-    if (res.action !== "ok" || !res.crop) return;
-    const r = await api(`/api/photos/${p.id}/crop`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(res.crop) });
-    $("msg").textContent = r.ok ? "" : (await r.json()).detail;
-    refresh();
-  };
-  const acts = el("span", { className: "acts" }, cropBtn);
-  if (photos.length > 1) acts.append(nextBtn);
-  const chin = el("figcaption", { className: "chin" }, el("span", { className: "date", textContent: shortDate(p.created_at) }), acts);
-  fig.append(del, chin);
+  fig.append(pick);
+  if (onIt && many) {
+    const nextBtn = el("button", { type: "button", textContent: isNext ? "Next up" : "Show next", className: isNext ? "on" : "" });
+    if (isNext) nextBtn.disabled = true;
+    else nextBtn.onclick = async () => { await api(`/api/devices/${m.id}/photos/${p.id}/next`, { method: "POST" }); refresh(); };
+    acts.append(nextBtn);
+  }
   return fig;
 }
 
 function renderGrid() {
-  $("count").textContent = photos.length === 1 ? "1 photo" : `${photos.length} photos · shuffled, a new one each morning`;
-  $("empty").hidden = photos.length > 0;
-  $("hint").hidden = photos.length === 0;
+  const m = magnet(), n = photos.length;
+  $("count").textContent = m
+    ? `${m.photo_ids.length} of ${n} photo${n === 1 ? "" : "s"} on ${m.name} · shuffled, a new one each morning`
+    : `${n} photo${n === 1 ? "" : "s"} in the library`;
+  $("empty").hidden = n > 0;
+  $("hint").hidden = n === 0;
+  $("hint").textContent = m
+    ? "Tap the circle on a photo to put it on this magnet or take it off. New uploads go to the library."
+    : magnets.length ? "Tap a photo to see it in the magnet's colors. Choose a magnet above to pick its photos."
+                     : "Tap a photo to see it in the magnet's colors. Add a magnet above to start showing photos.";
   $("grid").replaceChildren(...[...photos].reverse().map(card));  // newest first
-  renderStatus();
+}
+
+function renderAll() {
+  if (view !== "library" && !magnet()) view = "library";
+  renderTabs();
+  renderMagnetPanel();
+  renderGrid();
 }
 
 async function refresh() {
   try {
-    const [p, s] = await Promise.all([api("/api/photos"), api("/api/status")]);
+    const [p, d] = await Promise.all([api("/api/photos"), api("/api/devices")]);
     photos = await p.json();
-    status = await s.json();
+    magnets = await d.json();
     show(true);
-    renderGrid();
+    renderAll();
   } catch (e) { /* the login form is showing */ }
 }
 

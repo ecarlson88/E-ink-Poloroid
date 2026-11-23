@@ -53,9 +53,12 @@ publishes it over HTTPS without opening router ports.
    `/api/device/`: otherwise Cloudflare may answer the magnet with a browser
    challenge page instead of the photo, and the magnet keeps its old photo.
 5. Check from outside: `curl -i https://magnet.yourdomain.com/api/device/next`
-   gives `401`; with `-H "Authorization: Bearer <DEVICE_TOKEN>"` it gives `200`
-   and `curl -s ... | wc -c` prints `172800` (once a photo is uploaded). Put
-   the same URL in the firmware's `secrets.h` as `SERVER_URL`.
+   gives `401`. To check a real frame, add a magnet on the page (you get a
+   pairing code), pair it by hand with
+   `curl -s -H "Content-Type: application/json" -d '{"code":"ABCD-2345"}' https://magnet.yourdomain.com/api/device/pair`,
+   put a photo on it, then `curl -s -H "Authorization: Bearer <token>" https://magnet.yourdomain.com/api/device/next | wc -c`
+   prints `172800`. Put `https://magnet.yourdomain.com` in the firmware's
+   `secrets.h` as `SERVER_URL`.
 
 The app is also reachable at `http://127.0.0.1:8000` on the server itself, for
 local checks (log in only works over HTTPS, so use the tunnel address for that).
@@ -67,7 +70,7 @@ Update after a `git pull`: `docker compose up -d --build`.
 
 ## Run without Docker
 
-    DEVICE_TOKEN=... UPLOAD_PASSWORD_HASH=... SESSION_SECRET=... DATA_DIR=/var/lib/magnet \
+    UPLOAD_PASSWORD_HASH=... SESSION_SECRET=... DATA_DIR=/var/lib/magnet \
     LOW_BATTERY_WEBHOOK_URL=https://... uvicorn app:create_app --factory --host 127.0.0.1 --port 8000
 
 Make a password hash: `python -c "from app import hash_password; print(hash_password('your password'))"`
@@ -77,7 +80,34 @@ Make a password hash: `python -c "from app import hash_password; print(hash_pass
     pip install fastapi uvicorn pillow httpx python-multipart itsdangerous pytest
     pytest
 
+## Magnets and pairing
+
+One photo library, any number of magnets. Uploads go to the library only; on the page,
+pick a magnet and choose which library photos it shows. Each magnet has its own shuffle,
+status (last check-in, battery, what it shows) and low-battery alert.
+
+Adding a magnet: **+ Add magnet** on the page, give it a name, and you get a pairing
+code like `ABCD-2345` (works once, for 24 hours). On the magnet's Wi-Fi setup page,
+type the code along with the Wi-Fi details. The magnet trades the code for its own
+key and keeps it; the server stores only a hash of keys and codes. **New pairing code**
+gives a magnet a fresh code (its old key keeps working until the new code is used);
+**Remove magnet** cuts it off.
+
+`DEVICE_TOKEN` (optional) is for a magnet keyed before pairing existed: on first
+start with it set and no magnets yet, the server creates "My magnet" with that key,
+carries over its status and puts every photo on it.
+
 ## Device contract
 
-`GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <DEVICE_TOKEN>`
-returns a 172,800-byte frame (204 when no photos, 401 on a bad token).
+- `POST /api/device/pair` with JSON `{"code": "ABCD-2345"}` (case, spaces and the dash
+  don't matter) returns `{"token": "...", "name": "..."}`; `401` if the code is unknown,
+  used or expired.
+- `GET /api/device/next?bat_mv=<int>` with `Authorization: Bearer <token>` returns a
+  172,800-byte frame with header `X-Photo-Id` (204 when the magnet has no photos, 401 on
+  a bad token).
+
+Page API (session cookie): `GET/POST /api/photos`, `DELETE /api/photos/{id}`,
+`PUT /api/photos/{id}/crop`, `GET /api/photos/{id}/image?view=original|photo|panel`;
+`GET/POST /api/devices`, `PATCH/DELETE /api/devices/{id}`,
+`POST /api/devices/{id}/pair-code`, `PUT/DELETE /api/devices/{id}/photos/{photo_id}`,
+`POST /api/devices/{id}/photos/{photo_id}/next`.
