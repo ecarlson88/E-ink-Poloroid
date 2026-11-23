@@ -47,7 +47,7 @@ JOINT_SPREAD = 1.5                      # solder and wire beyond the pads
 BATT_GAP = 1.0                          # adapter to battery (compact: 1.5)
 SW_X = 12.0                             # switch centre
 LEDGE_T = 0.8                           # chin ledge under the sheet (bonding area)
-MAG_W, MAG_L, MAG_GAP, BOSS_WALL, MAG_PROUD = 3.0, 8.0, 0.2, 1.0, 0.4
+MAG_D, MAG_T, MAG_SKIN, MAG_GAP = 8.0, 0.6, 0.4, 0.2   # Erik's discs (measured 0.6), flush in the back wall
 RIB_T, RIB_GAP, CORNER_R = 1.2, 30.0, 4.0
 PIN_D = 1.2
 
@@ -99,16 +99,14 @@ z_ant = z_bond + LEDGE_T                             # antenna's front face, on 
 joint_y0 = xiao_y0 + JOINT_FROM_END[0] - JOINT_SPREAD  # lowest point of the battery joints
 rib = (WALL, panel_y - CLEAR - RIB_T, CASE_W / 2 - RIB_GAP / 2 - WALL, RIB_T)
 
-# Magnet bars: six on the left from above the chin; on the right, above the XIAO
-boss_w, boss_l = MAG_W + MAG_GAP + BOSS_WALL, MAG_L + MAG_GAP + 2 * BOSS_WALL
-top_y = CASE_H - CORNER_R - 1.0
-bars = []
-for side, start in (("L", panel_y + 1.0), ("R", xiao_y1 + CLEAR + 0.5)):
-    n = 6 if side == "L" else max(1, int((top_y - start + 4.0) // (boss_l + 4.0)))
-    pitch = (top_y - start - boss_l) / max(1, n - 1)
-    for i in range(n):
-        x = WALL if side == "L" else CASE_W - WALL - boss_w
-        bars.append((x, start + i * pitch, boss_w, boss_l))
+# Magnet discs (Erik): six, flush with the inside of the back wall (BackWall = skin + disc), two per
+# side: low (above the chin; on the right, above the XIAO), middle and top (below the corners)
+assert abs(MAG_SKIN + MAG_T - BACK_WALL) < 1e-9, "disc pockets must be flush with the inside"
+inset = WALL + 1.0 + MAG_D / 2
+low_y, top_y = panel_y + 1.0 + MAG_D / 2, CASE_H - CORNER_R - 1.0 - MAG_D / 2
+discs = [(x, y) for y in (low_y, (low_y + top_y) / 2, top_y) for x in (inset, CASE_W - inset)]
+discs[1] = (CASE_W - inset, xiao_y1 + CLEAR + 1.0 + MAG_D / 2)
+disc_boxes = [(x - MAG_D / 2, y - MAG_D / 2, MAG_D, MAG_D) for x, y in discs]
 
 
 def overlap(a, b, m=0.0):
@@ -130,12 +128,10 @@ assert ledge_room >= CLEAR - 1e-9, "antenna/ledge hits the XIAO's underside"
 assert joint_y0 >= max(ledge_top, CHIN_WALL + ANT_H) + CLEAR, "battery joints come down to the ledge or antenna"
 assert ledge_top <= panel_y - FOLD - CLEAR + 1e-9, "ledge reaches the cable fold"
 assert z_bond + LEDGE_T <= z_back_in - SW_T - CLEAR, "ledge hits the switch"
-batt_back_gap = INNER - (MASK_T + PANEL_T + CLEAR + BATT_T)
-for b in bars:
-    for name, p in (("adapter", adapter), ("XIAO", xiao)):
-        assert not overlap(b, p, 0.5), f"magnet pad hits the {name}"
-    if overlap(b, batt, 0.5):
-        assert batt_back_gap >= MAG_PROUD + CLEAR - 1e-9, "magnet pad under the battery without depth to spare"
+for d in disc_boxes:   # flush pockets stand nothing proud inside, so only plan clearances matter
+    for name, part in (("XIAO", xiao), ("switch backstop", backstop), ("antenna", ant)):
+        assert not overlap(d, part, CLEAR), f"magnet disc under the {name}"
+    assert d[0] >= WALL and d[0] + d[2] <= CASE_W - WALL and d[1] + d[3] <= inner_top, "disc outside the cavity"
 assert batt[1] + BATT_H <= inner_top - CLEAR + 1e-9, "battery hits the top wall"
 assert rib[0] + rib[2] <= fold[0] - CLEAR, "rib hits the cable fold"
 assert SHEET_LIP + SHEET_GAP < CHIN_WALL, "sheet edge misses the bottom wall and ledge"
@@ -187,9 +183,8 @@ ax.add_patch(Rectangle((SW_X - PLUNGER_W / 2, 0), PLUNGER_W, CHIN_WALL, fc="whit
 ax.annotate("setup button (D5), pressed\nupward from the bottom edge", (SW_X, 0), (SW_X - 8, -8), fontsize=7, color=INK,
             arrowprops=dict(arrowstyle="-|>", color=INK))
 box(ax, rib, None, color=INK, fill="#C9CDD3")
-for b in bars:
-    left = b[0] < CASE_W / 2
-    box(ax, (b[0] + (0 if left else BOSS_WALL) + MAG_GAP / 2, b[1] + BOSS_WALL + MAG_GAP / 2, MAG_W, MAG_L), color=MUTED, ls=":")
+for x, y in discs:
+    ax.add_patch(Circle((x, y), MAG_D / 2, fc="none", ec=MUTED, ls=":"))
 ax.annotate("", (0, -13), (CASE_W, -13), arrowprops=dict(arrowstyle="<->", color=INK))
 ax.text(CASE_W / 2, -14, f"{CASE_W:.1f}", ha="center", va="top", fontsize=10)
 ax.annotate("", (-5, 0), (-5, CASE_H), arrowprops=dict(arrowstyle="<->", color=INK))
@@ -233,8 +228,7 @@ print(f"XIAO x {xiao_x0:.1f}..{xiao_x1:.1f}, y {xiao_y0:.1f}..{xiao_y1:.1f}; rea
 print(f"switch centre x {SW_X:g}, body {SW_W:g} x {SW_D:g} x {SW_T:g}; ledge {ledge[2]:.1f} x {ledge[3]:.1f} x {LEDGE_T:g}, "
       f"antenna to the XIAO underside {ledge_room:.2f}; joints from y {joint_y0:.1f}")
 print(f"bond stack: rim at {T - z_bond:.2f} from the back, then mask {MASK_T:g} + tape {TAPE_T:g} + sheet {SHEET_T:g}")
-print(f"battery-to-back-wall gap {batt_back_gap:.2f} (bosses stand {MAG_PROUD:g} proud); battery top {batt[1] + BATT_H:.2f} "
-      f"vs inner top {inner_top:.2f}; magnet bars: {sum(b[0] < CASE_W / 2 for b in bars)} left, {sum(b[0] > CASE_W / 2 for b in bars)} right")
-print(f"antenna x {ant[0]:.1f}..{ant[0] + ant[2]:.1f} (notch at {notch[0]:.2f}), y {ant[1]:.1f}..{ant[1] + ant[3]:.1f} (cable fold from {fold[1]:.1f}), front face {z_ant:.1f} from the front, {T - z_ant - ANT_T:.2f} from the back face; lowest left magnet {panel_y + 1.0 - ant[1] - ant[3]:.1f} above it")
+print(f"battery top {batt[1] + BATT_H:.2f} vs inner top {inner_top:.2f}; discs at " + ", ".join(f"({x:.1f}, {y:.1f})" for x, y in discs))
+print(f"antenna x {ant[0]:.1f}..{ant[0] + ant[2]:.1f} (notch at {notch[0]:.2f}), y {ant[1]:.1f}..{ant[1] + ant[3]:.1f} (cable fold from {fold[1]:.1f}), front face {z_ant:.1f} from the front, {T - z_ant - ANT_T:.2f} from the back face; lowest left disc {disc_boxes[0][1] - ant[1] - ant[3]:.1f} above it")
 print(f"sheet {CASE_W - 2 * sheet_in:.2f} x {CASE_H - 2 * sheet_in:.2f} (R {CORNER_R - sheet_in:.2f}) in a {SHEET_LIP:g} lip, gap {SHEET_GAP:g}; side walls {WALL:.2f}")
 print(f"wrote {out}")

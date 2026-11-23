@@ -9,8 +9,7 @@ Build (from this folder, SolidCraft 0.22):
     python3 build_case.py discs           # layout v1, 8 x 0.6 discs  -> magnet_case_discs.json
     python3 build_case.py compact         # compact case, 3:4 picture, bars  -> magnet_case_compact.json
     python3 build_case.py compact discs   # compact case, 3:4 picture, discs -> magnet_case_compact_discs.json
-    python3 build_case.py acrylic         # acrylic-front case, bars  -> magnet_case_acrylic.json (+ acrylic_sheet.svg)
-    python3 build_case.py acrylic discs   # acrylic-front case, discs -> magnet_case_acrylic_discs.json
+    python3 build_case.py acrylic         # acrylic-front case (discs only) -> magnet_case_acrylic.json (+ acrylic_sheet.svg)
     solidcraft-cli run magnet_case.json --save magnet_case.solidcraft --out magnet_case.step
 
 Coordinates (mm): x to the right and y up as seen from the front, z from the back face
@@ -38,8 +37,8 @@ from pathlib import Path
 #          docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md.
 ARGS = set(sys.argv[1:])
 assert ARGS <= {"discs", "compact", "acrylic"}, ARGS
-STYLE = "discs" if "discs" in ARGS else "bars"
 ACRYLIC = "acrylic" in ARGS
+STYLE = "discs" if "discs" in ARGS or ACRYLIC else "bars"   # Erik: the acrylic case uses his 8 mm discs only
 SQUARE = "compact" in ARGS or ACRYLIC   # the compact layout (named for its first, square-picture version)
 MOUNT_B = SQUARE and not ACRYLIC         # the compact case's flipped XIAO, front pinhole and USB pocket
 MAG_ROWS_R = 5 if SQUARE else 6  # right-side bars (above the XIAO in the compact layouts)
@@ -457,7 +456,7 @@ else:
 c("inspect.measure")
 
 out = Path(__file__).with_name("magnet_case" + ("_acrylic" if ACRYLIC else "_compact" if SQUARE else "")
-                               + ("_discs" if STYLE == "discs" else "") + ".json")
+                               + ("_discs" if STYLE == "discs" and not ACRYLIC else "") + ".json")
 out.write_text(json.dumps(cmds, indent=1) + "\n")
 print(f"wrote {out} ({len(cmds)} commands, {len(PARAMS)} parameters)")
 

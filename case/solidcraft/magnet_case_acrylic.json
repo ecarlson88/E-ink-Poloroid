@@ -170,25 +170,17 @@
  {
   "command": "parameters.add",
   "params": {
-   "name": "MagW",
-   "expression": "3 mm",
-   "comment": "magnet bar width (Erik: 8 x 3 x 1 bars)"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagL",
+   "name": "MagD",
    "expression": "8 mm",
-   "comment": "magnet bar length (upright, along the side)"
+   "comment": "magnet disc diameter"
   }
  },
  {
   "command": "parameters.add",
   "params": {
    "name": "MagT",
-   "expression": "1 mm",
-   "comment": "magnet bar thickness"
+   "expression": "0.6 mm",
+   "comment": "magnet disc thickness (Erik measured 0.6)"
   }
  },
  {
@@ -282,14 +274,6 @@
  {
   "command": "parameters.add",
   "params": {
-   "name": "BackWall",
-   "expression": "1 mm",
-   "comment": "back wall thickness"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
    "name": "CornerR",
    "expression": "4 mm",
    "comment": "outer corner radius"
@@ -339,9 +323,9 @@
  {
   "command": "parameters.add",
   "params": {
-   "name": "BossWall",
-   "expression": "1 mm",
-   "comment": "wall around a magnet pocket"
+   "name": "BackWall",
+   "expression": "MagSkin + MagT",
+   "comment": "back wall thickness: exactly skin + magnet, so the pockets are flush inside"
   }
  },
  {
@@ -523,62 +507,6 @@
  {
   "command": "parameters.add",
   "params": {
-   "name": "BossW",
-   "expression": "MagW + MagGap + BossWall",
-   "comment": "magnet boss width from the side wall inward"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "BossL",
-   "expression": "MagL + MagGap + 2 * BossWall",
-   "comment": "magnet boss length"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagBottom",
-   "expression": "PanelY + 1 mm",
-   "comment": "bottom of the lowest magnet boss"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagTop",
-   "expression": "CaseH - CornerR - 1 mm",
-   "comment": "top of the highest magnet boss (below the rounded corner)"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagPitch",
-   "expression": "(MagTop - MagBottom - BossL) / 5",
-   "comment": "spacing between magnet rows"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagBottomR",
-   "expression": "XiaoY + XiaoW + Clear + 0.5 mm",
-   "comment": "bottom of the lowest right magnet boss (above the XIAO)"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
-   "name": "MagPitchR",
-   "expression": "(MagTop - MagBottomR - BossL) / 4",
-   "comment": "spacing between right magnet rows"
-  }
- },
- {
-  "command": "parameters.add",
-  "params": {
    "name": "SwX",
    "expression": "12 mm",
    "comment": "setup switch centre x (left of the XIAO)"
@@ -646,6 +574,46 @@
    "name": "BondZ",
    "expression": "ShellH - MaskT - TapeT",
    "comment": "tray rim height: the mask and the tape lie on the rim, rib and ledge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscInset",
+   "expression": "Wall + 1 mm + MagD / 2",
+   "comment": "disc centre from the outer side"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscLowY",
+   "expression": "PanelY + 1 mm + MagD / 2",
+   "comment": "lower disc row (just above the chin)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscTopY",
+   "expression": "CaseH - CornerR - 1 mm - MagD / 2",
+   "comment": "upper disc row (below the rounded corners)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscMidY",
+   "expression": "(DiscLowY + DiscTopY) / 2",
+   "comment": "middle disc row"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "DiscLowYR",
+   "expression": "XiaoY + XiaoW + Clear + 1 mm + MagD / 2",
+   "comment": "lower right disc (above the XIAO)"
   }
  },
  {
@@ -828,558 +796,127 @@
   "params": {
    "plane": "XY",
    "offset": "BackWall",
-   "name": "MagnetBosses"
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 0 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 0 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 0 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 0 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 1 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 1 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 1 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 1 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 2 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 2 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 2 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 2 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 3 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 3 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 3 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 3 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 4 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 4 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 4 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 4 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 5 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 5 * MagPitch"
-    ],
-    [
-     "Wall + BossW",
-     "MagBottom + 5 * MagPitch + BossL"
-    ],
-    [
-     "Wall - 0.5 mm",
-     "MagBottom + 5 * MagPitch + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 0 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 0 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 0 * MagPitchR + BossL"
-    ],
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 0 * MagPitchR + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 1 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 1 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 1 * MagPitchR + BossL"
-    ],
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 1 * MagPitchR + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 2 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 2 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 2 * MagPitchR + BossL"
-    ],
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 2 * MagPitchR + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 3 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 3 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 3 * MagPitchR + BossL"
-    ],
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 3 * MagPitchR + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.line",
-  "params": {
-   "points": [
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 4 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 4 * MagPitchR"
-    ],
-    [
-     "CaseW - Wall + 0.5 mm",
-     "MagBottomR + 4 * MagPitchR + BossL"
-    ],
-    [
-     "CaseW - Wall - BossW",
-     "MagBottomR + 4 * MagPitchR + BossL"
-    ]
-   ],
-   "closed": true
-  }
- },
- {
-  "command": "sketch.finish",
-  "params": {}
- },
- {
-  "command": "solid.extrude",
-  "params": {
-   "distance": "MagSkin + MagT - BackWall",
-   "operation": "join",
-   "targets": [
-    "Tray"
-   ],
-   "name": "Bosses"
-  }
- },
- {
-  "command": "sketch.create",
-  "params": {
-   "plane": "XY",
-   "offset": "MagSkin + MagT",
    "name": "MagnetPockets"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 0 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 0 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 0 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 0 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "DiscInset",
+    "DiscLowY"
    ],
-   "closed": true
+   "diameter": 8
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.dimension",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 1 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 1 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 1 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 1 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "entities": [
+    "c1"
    ],
-   "closed": true
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 2 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 2 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 2 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 2 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "CaseW - DiscInset",
+    "DiscLowYR"
    ],
-   "closed": true
+   "diameter": 8
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.dimension",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 3 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 3 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 3 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 3 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "entities": [
+    "c2"
    ],
-   "closed": true
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 4 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 4 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 4 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 4 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "DiscInset",
+    "DiscMidY"
    ],
-   "closed": true
+   "diameter": 8
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.dimension",
   "params": {
-   "points": [
-    [
-     "Wall",
-     "MagBottom + 5 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 5 * MagPitch + BossWall"
-    ],
-    [
-     "Wall + MagW + MagGap",
-     "MagBottom + 5 * MagPitch + BossWall + MagL + MagGap"
-    ],
-    [
-     "Wall",
-     "MagBottom + 5 * MagPitch + BossWall + MagL + MagGap"
-    ]
+   "entities": [
+    "c3"
    ],
-   "closed": true
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 0 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 0 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 0 * MagPitchR + BossWall + MagL + MagGap"
-    ],
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 0 * MagPitchR + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "CaseW - DiscInset",
+    "DiscMidY"
    ],
-   "closed": true
+   "diameter": 8
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.dimension",
   "params": {
-   "points": [
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 1 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 1 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 1 * MagPitchR + BossWall + MagL + MagGap"
-    ],
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 1 * MagPitchR + BossWall + MagL + MagGap"
-    ]
+   "entities": [
+    "c4"
    ],
-   "closed": true
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 2 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 2 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 2 * MagPitchR + BossWall + MagL + MagGap"
-    ],
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 2 * MagPitchR + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "DiscInset",
+    "DiscTopY"
    ],
-   "closed": true
+   "diameter": 8
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.dimension",
   "params": {
-   "points": [
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 3 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 3 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 3 * MagPitchR + BossWall + MagL + MagGap"
-    ],
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 3 * MagPitchR + BossWall + MagL + MagGap"
-    ]
+   "entities": [
+    "c5"
    ],
-   "closed": true
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {
-  "command": "sketch.line",
+  "command": "sketch.circle.center",
   "params": {
-   "points": [
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 4 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 4 * MagPitchR + BossWall"
-    ],
-    [
-     "CaseW - Wall",
-     "MagBottomR + 4 * MagPitchR + BossWall + MagL + MagGap"
-    ],
-    [
-     "CaseW - Wall - MagW - MagGap",
-     "MagBottomR + 4 * MagPitchR + BossWall + MagL + MagGap"
-    ]
+   "center": [
+    "CaseW - DiscInset",
+    "DiscTopY"
    ],
-   "closed": true
+   "diameter": 8
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "c6"
+   ],
+   "type": "diameter",
+   "value": "MagD + MagGap"
   }
  },
  {

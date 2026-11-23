@@ -35,9 +35,9 @@ than v1). Layout: `../layout_compact.png`. Build: `python3 build_case.py compact
 
 ## Acrylic-front version (an additional case type; mounting A)
 
-`magnet_case_acrylic.*` (bars) and `magnet_case_acrylic_discs.*` (discs), with `tray_acrylic.stl`,
-`tray_acrylic_discs.stl`, `front_sheet_acrylic.stl` (for fit checks only) and `acrylic_sheet.svg`.
-**62.9 x 95.7 x 7.15**. Layout: `../layout_acrylic.png`. Build: `python3 build_case.py acrylic [discs]`.
+`magnet_case_acrylic.*`, with `tray_acrylic.stl`, `front_sheet_acrylic.stl` (for fit checks only) and
+`acrylic_sheet.svg`. **Discs only** (Erik: his 8 mm discs; no bar version of this case).
+**62.9 x 95.7 x 7.15**. Layout: `../layout_acrylic.png`. Build: `python3 build_case.py acrylic`.
 Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
 
 - **Front:** a 1 mm clear acrylic sheet over the whole front (`SheetT`), glass-ready: flat, no
@@ -69,14 +69,14 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   it. `SwW`, `SwD`, `SwT` and the slot are **placeholders until the part is chosen**.
 - **Antenna (Erik: option A):** the slim 44 x 4.5 FPC antenna sticks to the back of the chin
   ledge, left of the USB-C notch (x 2.4 to 46.5), 4.8 from the back face (not modelled; see `../layout_acrylic.py`).
-- **Magnets:** six bars on the left, five on the right above the XIAO. Their bosses sit under
-  the battery's edge, which clears them by 0.35 in depth. Discs (`tray_acrylic_discs.stl`): six
-  8 x 0.6 discs flush with the inside of the back wall, two per side, the lower right one above
-  the XIAO (`render_acrylic_inside_discs.png`).
+- **Magnets:** six of Erik's 8 mm discs (measured 0.6 thick), glued into pockets flush with the
+  inside of the back wall (`BackWall` = 0.4 skin + 0.6 disc), two per side: just above the chin
+  (on the right, above the XIAO), at mid-height and below the top corners
+  (`render_acrylic_inside.png`). Same pole facing out on all six.
 - **Checked** (SolidCraft CLI and the parametric-3d-parts skill's `verify.py`): both build, 0
-  interferences; changing XiaoGap, CornerR and SheetGap together rebuilt every feature with the
-  kernel's faces unchanged, name for name (verify.py's merged face count moves by one there:
-  coplanar faces that happen to touch at the defaults); SwX, TapeT and LedgeT likewise.
+  interferences; changing XiaoGap, CornerR and SheetGap together rebuilt all 24 features with the
+  kernel's 95 faces unchanged, name for name (verify.py's merged face count moves by one there:
+  coplanar faces that happen to touch at the defaults).
   `check_acrylic_stack.py` passes (lip flush, sheet inset 0.95, rim 5.80, overall 7.15).
   Not opened in the desktop app.
 - **Assembly:** thin VHB tape on the rim, the rib and the ledge, then drop the sheet into the lip (warm it to open the case); vinyl
@@ -86,7 +86,7 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
 - **Renders:** `render_acrylic_inside.png` (sheet hidden), `render_acrylic_back.png`,
   `render_acrylic_edge.png` (bottom edge: plunger slot and USB-C notch),
   `render_acrylic_chin.png` (bottom-left corner: slot, ledge, rib), `render_acrylic_lip.png`
-  (top-left corner: the sheet in the lip), `render_acrylic_inside_discs.png`.
+  (top-left corner: the sheet in the lip).
 - **Unmeasured:** everything from the datasheets, as for the other versions, plus the switch.
 
 ## Layout v1 (full screen)
