@@ -4,7 +4,7 @@
 the **compact version with a 3:4 picture** (Erik's choice: `layout_compact.py`, mounting B,
 64.6 x 96.5 x 6.85) and layout v1 (full screen, 64.6 x 110.8 x 6.6, below) for comparison.
 An additional case type, the **acrylic-front version** (`layout_acrylic.py`, `build_case.py acrylic`,
-62.9 x 95.7 x 7.15): a 1 mm acrylic sheet with a vinyl mask, set into a lip on one FDM tray, disc magnets only, XIAO mounting A,
+62.9 x 95.7 x 7.15): a 1 mm acrylic sheet with a vinyl mask, set into a lip on one FDM tray (square sheet, 0.8 outer corners), disc magnets only, XIAO mounting A,
 and a setup button on the bottom edge (D5). See `solidcraft/README.md`.
 
 `layout.py` draws the proposed layout to scale  from the numbers in

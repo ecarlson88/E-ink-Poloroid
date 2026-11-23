@@ -275,8 +275,8 @@
   "command": "parameters.add",
   "params": {
    "name": "CornerR",
-   "expression": "4 mm",
-   "comment": "outer corner radius"
+   "expression": "0.8 mm",
+   "comment": "outer corner radius (Erik: 0.8; the sheet, its pocket and the cavity are square)"
   }
  },
  {
@@ -349,7 +349,7 @@
   "params": {
    "name": "BackR",
    "expression": "0.8 mm",
-   "comment": "fillet on the back face's outer edge"
+   "comment": "fillet on the back face's outer edge (keep it no larger than CornerR)"
   }
  },
  {
@@ -595,6 +595,14 @@
  {
   "command": "parameters.add",
   "params": {
+   "name": "StripChamfer",
+   "expression": "max(CornerR - Wall + StripStep, 0.2 mm)",
+   "comment": "chamfer on the strip's outer corner (keeps the step inside a rounded case corner)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
    "name": "BondZ",
    "expression": "ShellH - MaskT - TapeT",
    "comment": "tray rim height: the mask and the tape lie on the rim, rib and ledge"
@@ -620,8 +628,8 @@
   "command": "parameters.add",
   "params": {
    "name": "DiscTopY",
-   "expression": "CaseH - CornerR - 1 mm - MagD / 2",
-   "comment": "upper disc row (below the rounded corners)"
+   "expression": "CaseH - 9 mm",
+   "comment": "upper disc row (acrylic: where it sat with the 4 mm corners)"
   }
  },
  {
@@ -728,18 +736,6 @@
   }
  },
  {
-  "command": "sketch.fillet",
-  "params": {
-   "points": [
-    "l1.start",
-    "l1.end",
-    "l2.end",
-    "l3.end"
-   ],
-   "radius": "CornerR - SheetLip"
-  }
- },
- {
   "command": "sketch.finish",
   "params": {}
  },
@@ -785,18 +781,6 @@
     ]
    ],
    "closed": true
-  }
- },
- {
-  "command": "sketch.fillet",
-  "params": {
-   "points": [
-    "l1.start",
-    "l1.end",
-    "l2.end",
-    "l3.end"
-   ],
-   "radius": "CornerR - Wall"
   }
  },
  {
@@ -1019,7 +1003,7 @@
   "params": {
    "points": [
     [
-     "CornerR + 0 mm",
+     "Wall - StripStep + 0 mm + StripChamfer",
      "ChinWall - StripStep + 0 mm"
     ],
     [
@@ -1036,7 +1020,7 @@
     ],
     [
      "Wall - StripStep + 0 mm",
-     "ChinWall + CornerR - Wall + 0 mm"
+     "ChinWall - StripStep + 0 mm + StripChamfer"
     ]
    ],
    "closed": true
@@ -1071,7 +1055,7 @@
   "params": {
    "points": [
     [
-     "CornerR + StripGap",
+     "Wall - StripStep + StripGap + StripChamfer",
      "ChinWall - StripStep + StripGap"
     ],
     [
@@ -1088,7 +1072,7 @@
     ],
     [
      "Wall - StripStep + StripGap",
-     "ChinWall + CornerR - Wall + StripGap"
+     "ChinWall - StripStep + StripGap + StripChamfer"
     ]
    ],
    "closed": true
@@ -1322,18 +1306,6 @@
   }
  },
  {
-  "command": "sketch.fillet",
-  "params": {
-   "points": [
-    "l1.start",
-    "l1.end",
-    "l2.end",
-    "l3.end"
-   ],
-   "radius": "CornerR - SheetLip - SheetGap"
-  }
- },
- {
   "command": "sketch.finish",
   "params": {}
  },
@@ -1366,23 +1338,23 @@
      0
     ],
     [
-     1.1715728752538102,
-     1.1715728752538102,
+     0.23431457505076203,
+     0.23431457505076203,
      0
     ],
     [
-     61.72842712474619,
-     1.1715728752538102,
+     62.66568542494924,
+     0.23431457505076203,
      0
     ],
     [
-     61.72842712474619,
-     94.51842712474618,
+     62.66568542494924,
+     95.45568542494924,
      0
     ],
     [
-     1.1715728752538102,
-     94.51842712474618,
+     0.23431457505076203,
+     95.45568542494924,
      0
     ],
     [
@@ -1391,7 +1363,7 @@
      0
     ],
     [
-     57.6,
+     59.2,
      0,
      0
     ]
@@ -1421,23 +1393,23 @@
      7.15
     ],
     [
-     1.1715728752538102,
-     1.1715728752538102,
+     0.23431457505076203,
+     0.23431457505076203,
      7.15
     ],
     [
-     61.72842712474619,
-     1.1715728752538102,
+     62.66568542494924,
+     0.23431457505076203,
      7.15
     ],
     [
-     61.72842712474619,
-     94.51842712474618,
+     62.66568542494924,
+     95.45568542494924,
      7.15
     ],
     [
-     1.1715728752538102,
-     94.51842712474618,
+     0.23431457505076203,
+     95.45568542494924,
      7.15
     ],
     [
@@ -1446,7 +1418,7 @@
      7.15
     ],
     [
-     57.6,
+     59.2,
      0,
      7.15
     ]

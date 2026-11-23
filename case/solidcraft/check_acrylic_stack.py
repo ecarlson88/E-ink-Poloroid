@@ -24,7 +24,9 @@ with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "res.json"
     subprocess.run([cli, "run", str(script), "--results", "--quiet", "--json-out", str(out)], check=True,
                    capture_output=True)
-    bodies = {b["name"]: b["bbox"] for b in json.loads(out.read_text())[-1]["bodies"]}
+    measured = json.loads(out.read_text())[-1]["bodies"]
+    bodies = {b["name"]: b["bbox"] for b in measured}
+    sheet_faces = {b["name"]: b["faces"] for b in measured}["FrontSheet"]
 tray_top, sheet_lo, sheet_hi = bodies["Tray"]["max"][2], bodies["FrontSheet"]["min"][2], bodies["FrontSheet"]["max"][2]
 ok = True
 inset = env.get("SheetLip", 0.0) + env.get("SheetGap", 0.0)
@@ -36,6 +38,11 @@ for what, got, want in (("lip top flush with the sheet face", tray_top, env["She
     good = abs(got - want) < 0.01
     ok &= good
     print(f"{'ok  ' if good else 'FAIL'} {what}: {got:.3f} (want {want:.3f})")
+# Erik: square acrylic (a plain box: 6 faces, no corner radius) and 0.8 outer corners on the tray.
+for what, good, detail in (("square sheet", sheet_faces == 6, f"{sheet_faces} faces"),
+                           ("outer corner radius 0.8", abs(env["CornerR"] - 0.8) < 1e-9, f"CornerR {env['CornerR']:g}")):
+    ok &= good
+    print(f"{'ok  ' if good else 'FAIL'} {what}: {detail}")
 # The chin strip (a separate flat part, printed on the bed): LedgeT thick, its top flush with the rim,
 # stopping short of the USB-C notch; it rests on a step in the tray's bottom and left walls.
 strip = bodies.get("ChinStrip")

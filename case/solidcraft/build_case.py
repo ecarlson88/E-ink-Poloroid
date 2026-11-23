@@ -199,6 +199,8 @@ if ACRYLIC:
               "MaskT + PanelT + XiaoGap + XiaoT - BackWall)",
               "inside depth: panel + battery, panel + XIAO, or deep enough that the USB-C ends flush with the back face")
     set_param("PinX", "XiaoX + XiaoH - BtnFromSide", "rear pinhole x (mounting A mirrors the buttons: check which one is reset)")
+    set_param("CornerR", "0.8 mm", "outer corner radius (Erik: 0.8; the sheet, its pocket and the cavity are square)")
+    set_param("BackR", "0.8 mm", "fillet on the back face's outer edge (keep it no larger than CornerR)")
     PARAMS += [
         ("SwX", "12 mm", "setup switch centre x (left of the XIAO)"),
         ("SwW", "3.5 mm", "setup switch body width (placeholder until the part is chosen)"),
@@ -211,6 +213,7 @@ if ACRYLIC:
         ("StripStep", "0.4 mm", "step cut into the bottom and left walls that the chin strip rests on"),
         ("StripGap", "0.1 mm", "fit gap between the chin strip and its step"),
         ("StripEnd", "UsbCX - UsbW / 2 - Clear", "right end of the chin strip and its step (the USB-C notch)"),
+        ("StripChamfer", "max(CornerR - Wall + StripStep, 0.2 mm)", "chamfer on the strip's outer corner (keeps the step inside a rounded case corner)"),
         ("BondZ", "ShellH - MaskT - TapeT", "tray rim height: the mask and the tape lie on the rim, rib and ledge"),
     ]
 
@@ -225,7 +228,8 @@ if STYLE == "discs":
     PARAMS += [
         ("DiscInset", "Wall + 1 mm + MagD / 2", "disc centre from the outer side"),
         ("DiscLowY", "PanelY + 1 mm + MagD / 2", "lower disc row (just above the chin)"),
-        ("DiscTopY", "CaseH - CornerR - 1 mm - MagD / 2", "upper disc row (below the rounded corners)"),
+        ("DiscTopY", "CaseH - 9 mm" if ACRYLIC else "CaseH - CornerR - 1 mm - MagD / 2",
+         "upper disc row (acrylic: where it sat with the 4 mm corners)" if ACRYLIC else "upper disc row (below the rounded corners)"),
         ("DiscMidY", "(DiscLowY + DiscTopY) / 2", "middle disc row"),
     ]
     if SQUARE:
@@ -247,13 +251,16 @@ c("solid.extrude", distance="ShellH + SheetT" if ACRYLIC else "ShellH", name="Sh
 if ACRYLIC:
     # Pocket for the sheet: inset by the lip, down to the rim (BondZ) where the mask and tape sit.
     c("sketch.create", plane="XY", offset="ShellH + SheetT", name="SheetPocket")
-    rounded_rect("SheetLip", "SheetLip", "CaseW - SheetLip", "CaseH - SheetLip", "CornerR - SheetLip", 1)
+    rect("SheetLip", "SheetLip", "CaseW - SheetLip", "CaseH - SheetLip")   # square, like the sheet (Erik)
     c("sketch.finish")
     c("solid.extrude", distance="SheetT + MaskT + TapeT", direction="negative", operation="cut", targets=[SHELL],
       name="SheetPocketCut")
 
 c("sketch.create", plane="XY", offset="BondZ" if ACRYLIC else "ShellH", name="Cavity")
-rounded_rect("Wall", "ChinWall" if ACRYLIC else "Wall", "CaseW - Wall", "CaseH - Wall", "CornerR - Wall", 1)
+if ACRYLIC:   # 0.8 outer corners leave no room for a rounded inside corner
+    rect("Wall", "ChinWall", "CaseW - Wall", "CaseH - Wall")
+else:
+    rounded_rect("Wall", "Wall", "CaseW - Wall", "CaseH - Wall", "CornerR - Wall", 1)
 c("sketch.finish")
 c("solid.extrude", distance="InnerD - MaskT - TapeT" if ACRYLIC else "InnerD", direction="negative", operation="cut",
   targets=[SHELL], name="Hollow")
@@ -318,8 +325,8 @@ if ACRYLIC:
     # the step stays inside the case's rounded corner. Glue it to the step.
     def chin_outline(inset):
         x0, y0 = f"Wall - StripStep + {inset}", f"ChinWall - StripStep + {inset}"
-        c("sketch.line", points=[[f"CornerR + {inset}", y0], ["StripEnd", y0], ["StripEnd", "LedgeTop"],
-                                 [x0, "LedgeTop"], [x0, f"ChinWall + CornerR - Wall + {inset}"]], closed=True)
+        c("sketch.line", points=[[f"{x0} + StripChamfer", y0], ["StripEnd", y0], ["StripEnd", "LedgeTop"],
+                                 [x0, "LedgeTop"], [x0, f"{y0} + StripChamfer"]], closed=True)
 
     c("sketch.create", plane="XY", offset="BondZ", name="ChinStep")
     chin_outline("0 mm")
@@ -356,8 +363,7 @@ if ACRYLIC:
 
     # Front sheet: modelled for fit checks and the STEP; it is laser cut, not printed.
     c("sketch.create", plane="XY", offset="ShellH", name="SheetOutline")
-    rounded_rect("SheetLip + SheetGap", "SheetLip + SheetGap", "CaseW - SheetLip - SheetGap", "CaseH - SheetLip - SheetGap",
-                 "CornerR - SheetLip - SheetGap", 1)
+    rect("SheetLip + SheetGap", "SheetLip + SheetGap", "CaseW - SheetLip - SheetGap", "CaseH - SheetLip - SheetGap")  # square (Erik)
     c("sketch.finish")
     c("solid.extrude", distance="SheetT", operation="new", name="Sheet", body_name="FrontSheet")
 
@@ -475,21 +481,17 @@ print(f"wrote {out} ({len(cmds)} commands, {len(PARAMS)} parameters)")
 if ACRYLIC:
     # Cut file for the sheet and the vinyl mask, seen from the back (the vinyl goes on the back,
     # so the window is mirrored left-right). Red: sheet outline (laser). Blue: mask window (vinyl).
-    def rr_path(x, y, w, h, r):
-        return (f"M{x + r:.3f},{y:.3f} H{x + w - r:.3f} A{r:.3f},{r:.3f} 0 0 1 {x + w:.3f},{y + r:.3f} "
-                f"V{y + h - r:.3f} A{r:.3f},{r:.3f} 0 0 1 {x + w - r:.3f},{y + h:.3f} H{x + r:.3f} "
-                f"A{r:.3f},{r:.3f} 0 0 1 {x:.3f},{y + h - r:.3f} V{y + r:.3f} A{r:.3f},{r:.3f} 0 0 1 {x + r:.3f},{y:.3f} Z")
     ins = v["SheetLip"] + v["SheetGap"]                # the sheet sits in the lip's pocket
-    SW, SH, SR = W - 2 * ins, H - 2 * ins, R - ins
+    SW, SH = W - 2 * ins, H - 2 * ins                  # square sheet (Erik)
     wx_back = SW - (v["WinX"] - ins) - v["WinW"]       # mirrored for the back, in sheet coordinates
     wy_svg = SH - (v["WinY"] - ins) - v["WinH"]        # SVG y runs down
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{SW:.3f}mm" height="{SH:.3f}mm" viewBox="0 0 {SW:.3f} {SH:.3f}">\n'
-           f'<!-- Acrylic-front case: sheet {SW:.2f} x {SH:.2f} mm, corner R {SR:.2f}, {v["SheetT"]:g} mm thick. Red: cut the sheet. '
+           f'<!-- Acrylic-front case: sheet {SW:.2f} x {SH:.2f} mm, square corners, {v["SheetT"]:g} mm thick. Red: cut the sheet. '
            f'Blue: the mask window, {v["WinW"]:.2f} x {v["WinH"]:.2f} mm; seen from the back (vinyl on the back, window mirrored). '
            f'Generated by build_case.py acrylic. -->\n'
-           f'<path d="{rr_path(0, 0, SW, SH, SR)}" fill="none" stroke="#ff0000" stroke-width="0.01"/>\n'
+           f'<rect x="0" y="0" width="{SW:.3f}" height="{SH:.3f}" fill="none" stroke="#ff0000" stroke-width="0.01"/>\n'
            f'<rect x="{wx_back:.3f}" y="{wy_svg:.3f}" width="{v["WinW"]:.3f}" height="{v["WinH"]:.3f}" fill="none" '
            f'stroke="#0000ff" stroke-width="0.01"/>\n</svg>\n')
     svg_out = Path(__file__).with_name("acrylic_sheet.svg")
     svg_out.write_text(svg)
-    print(f"wrote {svg_out} (case {W:.2f} x {H:.2f}; sheet {SW:.2f} x {SH:.2f} R {SR:.2f}, window {v['WinW']:.2f} x {v['WinH']:.2f} at {wx_back:.2f}, {wy_svg:.2f} from the top left, seen from the back)")
+    print(f"wrote {svg_out} (case {W:.2f} x {H:.2f}; sheet {SW:.2f} x {SH:.2f} square, window {v['WinW']:.2f} x {v['WinH']:.2f} at {wx_back:.2f}, {wy_svg:.2f} from the top left, seen from the back)")

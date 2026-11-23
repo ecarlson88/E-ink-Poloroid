@@ -49,7 +49,7 @@ SW_X = 12.0                             # switch centre
 LEDGE_T = 0.8                           # chin strip under the sheet (bonding area): a separate flat part,
 STRIP_STEP = 0.4                        # resting on a step this deep in the bottom and left walls (no overhang)
 MAG_D, MAG_T, MAG_SKIN, MAG_GAP = 8.0, 0.6, 0.4, 0.2   # Erik's discs (measured 0.6), flush in the back wall
-RIB_T, RIB_GAP, CORNER_R = 1.2, 30.0, 4.0
+RIB_T, RIB_GAP, CORNER_R = 1.2, 30.0, 0.8   # Erik: 0.8 outer corners; sheet, pocket and cavity square
 PIN_D = 1.2
 
 CASE_W = PANEL_W + 2 * (CLEAR + WALL)
@@ -105,7 +105,7 @@ rib = (WALL, panel_y - CLEAR - RIB_T, CASE_W / 2 - RIB_GAP / 2 - WALL, RIB_T)
 # side: low (above the chin; on the right, above the XIAO), middle and top (below the corners)
 assert abs(MAG_SKIN + MAG_T - BACK_WALL) < 1e-9, "disc pockets must be flush with the inside"
 inset = WALL + 1.0 + MAG_D / 2
-low_y, top_y = panel_y + 1.0 + MAG_D / 2, CASE_H - CORNER_R - 1.0 - MAG_D / 2
+low_y, top_y = panel_y + 1.0 + MAG_D / 2, CASE_H - 9.0      # top row: where it sat with the old 4 mm corners
 discs = [(x, y) for y in (low_y, (low_y + top_y) / 2, top_y) for x in (inset, CASE_W - inset)]
 discs[1] = (CASE_W - inset, xiao_y1 + CLEAR + 1.0 + MAG_D / 2)
 disc_boxes = [(x - MAG_D / 2, y - MAG_D / 2, MAG_D, MAG_D) for x, y in discs]
@@ -214,8 +214,7 @@ a.set_xlim(-6, T + 8); a.set_ylim(-18, CASE_H + 4); a.set_aspect("equal"); a.axi
 a.set_title("Section through the XIAO\n(front left)", fontsize=10)
 
 sheet_in = SHEET_LIP + SHEET_GAP
-ax.add_patch(FancyBboxPatch((sheet_in, sheet_in), CASE_W - 2 * sheet_in, CASE_H - 2 * sheet_in,
-                            boxstyle=f"round,pad=0,rounding_size={CORNER_R - sheet_in}", fc="none", ec=BLUE, lw=0.8))
+ax.add_patch(Rectangle((sheet_in, sheet_in), CASE_W - 2 * sheet_in, CASE_H - 2 * sheet_in, fc="none", ec=BLUE, lw=0.8))
 ax.text(CASE_W / 2, CASE_H - 0.3, f"acrylic edge, in a {SHEET_LIP:g} lip", ha="center", va="top", fontsize=6, color=BLUE)
 chin = win[1]
 fig.suptitle(f"Acrylic-front case, 3:4 picture, mounting A: {CASE_W:.1f} x {CASE_H:.1f} x {T:.2f} mm "
@@ -232,5 +231,5 @@ print(f"switch centre x {SW_X:g}, body {SW_W:g} x {SW_D:g} x {SW_T:g}; chin stri
 print(f"bond stack: rim at {T - z_bond:.2f} from the back, then mask {MASK_T:g} + tape {TAPE_T:g} + sheet {SHEET_T:g}")
 print(f"battery top {batt[1] + BATT_H:.2f} vs inner top {inner_top:.2f}; discs at " + ", ".join(f"({x:.1f}, {y:.1f})" for x, y in discs))
 print(f"antenna x {ant[0]:.1f}..{ant[0] + ant[2]:.1f} (notch at {notch[0]:.2f}), y {ant[1]:.1f}..{ant[1] + ant[3]:.1f} (cable fold from {fold[1]:.1f}), front face {z_ant:.1f} from the front, {T - z_ant - ANT_T:.2f} from the back face; lowest left disc {disc_boxes[0][1] - ant[1] - ant[3]:.1f} above it")
-print(f"sheet {CASE_W - 2 * sheet_in:.2f} x {CASE_H - 2 * sheet_in:.2f} (R {CORNER_R - sheet_in:.2f}) in a {SHEET_LIP:g} lip, gap {SHEET_GAP:g}; side walls {WALL:.2f}")
+print(f"sheet {CASE_W - 2 * sheet_in:.2f} x {CASE_H - 2 * sheet_in:.2f} (square) in a {SHEET_LIP:g} lip, gap {SHEET_GAP:g}; side walls {WALL:.2f}")
 print(f"wrote {out}")

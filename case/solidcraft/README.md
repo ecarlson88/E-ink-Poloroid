@@ -49,7 +49,9 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   `TapeT`; `python3 check_acrylic_stack.py` checks the stack in the built model.
 - **Lip (Erik):** the sheet drops into a pocket: a 0.8 lip (`SheetLip`) flush with the sheet's
   face, 0.15 fit gap (`SheetGap`) all round. It protects the acrylic's (or later glass's) edges,
-  locates the sheet and hides the tape. The sheet is 61.0 x 93.8, corner R 3.05. Print a test
+  locates the sheet and hides the tape. The sheet is 61.0 x 93.8 with **square corners**, in a
+  square pocket (Erik); the case's outer corners are **R 0.8** (`CornerR`; keep `BackR` 0.8 no
+  larger than it), and the cavity inside is square. Print a test
   corner to check the fit. Keep `SheetLip + SheetGap` below `ChinWall` (1.0): along the bottom the
   chin ledge carries the sheet, so the case only grows at the sides and top.
 - **`acrylic_sheet.svg`:** red is the sheet outline (laser cut), blue is the mask window (vinyl
@@ -77,7 +79,7 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   strip, left of the USB-C notch (x 2.4 to 46.5), 4.8 from the back face (not modelled; see `../layout_acrylic.py`).
 - **Magnets:** six of Erik's 8 mm discs (measured 0.6 thick), glued into pockets flush with the
   inside of the back wall (`BackWall` = 0.4 skin + 0.6 disc), two per side: just above the chin
-  (on the right, above the XIAO), at mid-height and below the top corners
+  (on the right, above the XIAO), at mid-height and 9 mm below the top edge
   (`render_acrylic_inside.png`). Same pole facing out on all six.
 - **Checked** (SolidCraft CLI and the parametric-3d-parts skill's `verify.py`): both build, 0
   interferences; changing XiaoGap, CornerR and SheetGap together rebuilt all 26 features with face counts
