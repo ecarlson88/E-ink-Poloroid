@@ -35,7 +35,7 @@ than v1). Layout: `../layout_compact.png`. Build: `python3 build_case.py compact
 
 ## Acrylic-front version (an additional case type; mounting A)
 
-`magnet_case_acrylic.*`, with `tray_acrylic.stl`, `front_sheet_acrylic.stl` (for fit checks only) and
+`magnet_case_acrylic.*`, with `tray_acrylic.stl`, `chin_strip_acrylic.stl`, `front_sheet_acrylic.stl` (for fit checks only) and
 `acrylic_sheet.svg`. **Discs only** (Erik: his 8 mm discs; no bar version of this case).
 **62.9 x 95.7 x 7.15**. Layout: `../layout_acrylic.png`. Build: `python3 build_case.py acrylic`.
 Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
@@ -56,8 +56,14 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   cutter). It is drawn **seen from the back**, because the vinyl goes on the back of the sheet.
 - **Tray:** one FDM print, back on the bed, no supports. Side and top walls 2.15 (`Wall` =
   1.2 rim `RimW` + gap + lip), bottom 1.0 (`ChinWall`, so the slim antenna clears the cable fold),
-  back 1.0. The rim, the left rib and a 0.8 ledge across the chin (`LedgeT`) carry the sheet
-  (through the mask and the tape).
+  back 1.0. The rim, the left rib and the chin strip carry the sheet (through the mask and the tape).
+  The tray prints with **no supports**: its only overhangs are a 0.2 strip under the bottom lip and
+  the 1.6 top of the plunger slot.
+- **Chin strip (`chin_strip_acrylic.stl`):** a separate flat part, 45 x 4.7 x 0.8 (`LedgeT`),
+  printed flat on the bed. It runs across the chin under the sheet (tape area) from the left wall
+  to the USB-C notch, and the antenna sticks to its back. It rests on a 0.4 step (`StripStep`) cut
+  into the bottom and left walls, with a 0.1 fit gap (`StripGap`); glue it to the step (CA).
+  (As part of the tray it was a 4.3 mm shelf over open air, which would need supports.)
 - **XIAO, mounting A:** upright at the right, parts and buttons facing the back, `XiaoGap` 0.65
   (0.45 for joints plus 0.2 clearance: the mask took 0.1). The USB-C sits in a notch through the
   back and bottom walls, its face flush with the bottom edge and its body ending at the back face.
@@ -68,24 +74,25 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   through a plunger slot in the bottom wall (`PlungerW` x `PlungerH`), with a backstop rib behind
   it. `SwW`, `SwD`, `SwT` and the slot are **placeholders until the part is chosen**.
 - **Antenna (Erik: option A):** the slim 44 x 4.5 FPC antenna sticks to the back of the chin
-  ledge, left of the USB-C notch (x 2.4 to 46.5), 4.8 from the back face (not modelled; see `../layout_acrylic.py`).
+  strip, left of the USB-C notch (x 2.4 to 46.5), 4.8 from the back face (not modelled; see `../layout_acrylic.py`).
 - **Magnets:** six of Erik's 8 mm discs (measured 0.6 thick), glued into pockets flush with the
   inside of the back wall (`BackWall` = 0.4 skin + 0.6 disc), two per side: just above the chin
   (on the right, above the XIAO), at mid-height and below the top corners
   (`render_acrylic_inside.png`). Same pole facing out on all six.
 - **Checked** (SolidCraft CLI and the parametric-3d-parts skill's `verify.py`): both build, 0
-  interferences; changing XiaoGap, CornerR and SheetGap together rebuilt all 24 features with the
-  kernel's 95 faces unchanged, name for name (verify.py's merged face count moves by one there:
+  interferences; changing XiaoGap, CornerR and SheetGap together rebuilt all 26 features with face counts
+  unchanged (also with StripStep 0.5 and StripGap 0.15) (verify.py's merged face count moves by one there:
   coplanar faces that happen to touch at the defaults).
   `check_acrylic_stack.py` passes (lip flush, sheet inset 0.95, rim 5.80, overall 7.15).
   Not opened in the desktop app.
-- **Assembly:** thin VHB tape on the rim, the rib and the ledge, then drop the sheet into the lip (warm it to open the case); vinyl
+- **Assembly:** antenna onto the back of the chin strip, glue the strip onto its step; thin VHB tape on
+  the rim, the rib and the strip, then drop the sheet into the lip (warm it to open the case); vinyl
   on the back of the sheet before fitting; foam pads behind the panel as in the compact case;
   no acetic-cure silicone near the panel. The 0.4 skin over each magnet is two FDM layers:
   print a test patch first.
 - **Renders:** `render_acrylic_inside.png` (sheet hidden), `render_acrylic_back.png`,
   `render_acrylic_edge.png` (bottom edge: plunger slot and USB-C notch),
-  `render_acrylic_chin.png` (bottom-left corner: slot, ledge, rib), `render_acrylic_lip.png`
+  `render_acrylic_chin.png` (bottom-left corner, strip hidden: slot, strip step, rib, backstop), `render_acrylic_lip.png`
   (top-left corner: the sheet in the lip).
 - **Unmeasured:** everything from the datasheets, as for the other versions, plus the switch.
 

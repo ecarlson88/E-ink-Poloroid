@@ -206,8 +206,11 @@ if ACRYLIC:
         ("SwT", "1.6 mm", "setup switch body height, from the back wall (placeholder)"),
         ("PlungerW", "1.6 mm", "plunger slot width through the bottom wall (placeholder)"),
         ("PlungerH", "1 mm", "plunger slot height (placeholder)"),
-        ("LedgeT", "0.8 mm", "chin ledge under the sheet: tape area; the antenna sticks to its back"),
-        ("LedgeTop", "PanelY - Fold - Clear", "top of the chin ledge (clear of the panel cable fold)"),
+        ("LedgeT", "0.8 mm", "chin strip thickness (a separate part under the sheet: tape area; the antenna sticks to its back)"),
+        ("LedgeTop", "PanelY - Fold - Clear", "top edge of the chin strip (clear of the panel cable fold)"),
+        ("StripStep", "0.4 mm", "step cut into the bottom and left walls that the chin strip rests on"),
+        ("StripGap", "0.1 mm", "fit gap between the chin strip and its step"),
+        ("StripEnd", "UsbCX - UsbW / 2 - Clear", "right end of the chin strip and its step (the USB-C notch)"),
         ("BondZ", "ShellH - MaskT - TapeT", "tray rim height: the mask and the tape lie on the rim, rib and ledge"),
     ]
 
@@ -309,14 +312,23 @@ c("sketch.finish")
 c("solid.extrude", distance="InnerD - MaskT - TapeT" if ACRYLIC else "InnerD", operation="join", targets=[SHELL], name="Ribs")
 
 if ACRYLIC:
-    # Chin ledge under the sheet (tape area; the antenna sticks to its back), its bottom corners
-    # chamfered inside the cavity's corner arcs; it runs 0.3 into the walls so it joins them.
-    c("sketch.create", plane="XY", offset="BondZ - LedgeT", name="ChinLedge")
-    c("sketch.line", points=[["CornerR", "ChinWall - 0.3 mm"], ["CaseW - CornerR", "ChinWall - 0.3 mm"],
-                             ["CaseW - Wall + 0.3 mm", "ChinWall + CornerR - Wall"], ["CaseW - Wall + 0.3 mm", "LedgeTop"],
-                             ["Wall - 0.3 mm", "LedgeTop"], ["Wall - 0.3 mm", "ChinWall + CornerR - Wall"]], closed=True)
+    # Chin strip: a separate flat part (printed on the bed, so no overhang in the tray) under the
+    # sheet across the chin: tape area, and the antenna sticks to its back. It rests on a step cut
+    # into the bottom and left walls (the step faces up, so it prints); outer corner chamfered so
+    # the step stays inside the case's rounded corner. Glue it to the step.
+    def chin_outline(inset):
+        x0, y0 = f"Wall - StripStep + {inset}", f"ChinWall - StripStep + {inset}"
+        c("sketch.line", points=[[f"CornerR + {inset}", y0], ["StripEnd", y0], ["StripEnd", "LedgeTop"],
+                                 [x0, "LedgeTop"], [x0, f"ChinWall + CornerR - Wall + {inset}"]], closed=True)
+
+    c("sketch.create", plane="XY", offset="BondZ", name="ChinStep")
+    chin_outline("0 mm")
     c("sketch.finish")
-    c("solid.extrude", distance="LedgeT", operation="join", targets=[SHELL], name="Ledge")
+    c("solid.extrude", distance="LedgeT", direction="negative", operation="cut", targets=[SHELL], name="ChinStepCut")
+    c("sketch.create", plane="XY", offset="BondZ - LedgeT", name="ChinStripOutline")
+    chin_outline("StripGap")
+    c("sketch.finish")
+    c("solid.extrude", distance="LedgeT", operation="new", name="Strip", body_name="ChinStrip")
 
     # Setup switch: a backstop rib behind its body, and the plunger slot through the bottom wall.
     c("sketch.create", plane="XY", offset="BackWall", name="SwitchBackstop")

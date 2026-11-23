@@ -557,7 +557,7 @@
   "params": {
    "name": "LedgeT",
    "expression": "0.8 mm",
-   "comment": "chin ledge under the sheet: tape area; the antenna sticks to its back"
+   "comment": "chin strip thickness (a separate part under the sheet: tape area; the antenna sticks to its back)"
   }
  },
  {
@@ -565,7 +565,31 @@
   "params": {
    "name": "LedgeTop",
    "expression": "PanelY - Fold - Clear",
-   "comment": "top of the chin ledge (clear of the panel cable fold)"
+   "comment": "top edge of the chin strip (clear of the panel cable fold)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "StripStep",
+   "expression": "0.4 mm",
+   "comment": "step cut into the bottom and left walls that the chin strip rests on"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "StripGap",
+   "expression": "0.1 mm",
+   "comment": "fit gap between the chin strip and its step"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "StripEnd",
+   "expression": "UsbCX - UsbW / 2 - Clear",
+   "comment": "right end of the chin strip and its step (the USB-C notch)"
   }
  },
  {
@@ -986,8 +1010,8 @@
   "command": "sketch.create",
   "params": {
    "plane": "XY",
-   "offset": "BondZ - LedgeT",
-   "name": "ChinLedge"
+   "offset": "BondZ",
+   "name": "ChinStep"
   }
  },
  {
@@ -995,28 +1019,24 @@
   "params": {
    "points": [
     [
-     "CornerR",
-     "ChinWall - 0.3 mm"
+     "CornerR + 0 mm",
+     "ChinWall - StripStep + 0 mm"
     ],
     [
-     "CaseW - CornerR",
-     "ChinWall - 0.3 mm"
+     "StripEnd",
+     "ChinWall - StripStep + 0 mm"
     ],
     [
-     "CaseW - Wall + 0.3 mm",
-     "ChinWall + CornerR - Wall"
-    ],
-    [
-     "CaseW - Wall + 0.3 mm",
+     "StripEnd",
      "LedgeTop"
     ],
     [
-     "Wall - 0.3 mm",
+     "Wall - StripStep + 0 mm",
      "LedgeTop"
     ],
     [
-     "Wall - 0.3 mm",
-     "ChinWall + CornerR - Wall"
+     "Wall - StripStep + 0 mm",
+     "ChinWall + CornerR - Wall + 0 mm"
     ]
    ],
    "closed": true
@@ -1030,11 +1050,61 @@
   "command": "solid.extrude",
   "params": {
    "distance": "LedgeT",
-   "operation": "join",
+   "direction": "negative",
+   "operation": "cut",
    "targets": [
     "Tray"
    ],
-   "name": "Ledge"
+   "name": "ChinStepCut"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "BondZ - LedgeT",
+   "name": "ChinStripOutline"
+  }
+ },
+ {
+  "command": "sketch.line",
+  "params": {
+   "points": [
+    [
+     "CornerR + StripGap",
+     "ChinWall - StripStep + StripGap"
+    ],
+    [
+     "StripEnd",
+     "ChinWall - StripStep + StripGap"
+    ],
+    [
+     "StripEnd",
+     "LedgeTop"
+    ],
+    [
+     "Wall - StripStep + StripGap",
+     "LedgeTop"
+    ],
+    [
+     "Wall - StripStep + StripGap",
+     "ChinWall + CornerR - Wall + StripGap"
+    ]
+   ],
+   "closed": true
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.extrude",
+  "params": {
+   "distance": "LedgeT",
+   "operation": "new",
+   "name": "Strip",
+   "body_name": "ChinStrip"
   }
  },
  {
