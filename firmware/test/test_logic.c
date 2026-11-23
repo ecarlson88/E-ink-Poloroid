@@ -144,6 +144,31 @@ static void test_boot_action(void)
     CHECK(boot_action(WAKE_OTHER, false) == BOOT_NORMAL);
 }
 
+/* Task 5 (Erik): the edge button on D5. A short press shows the next photo; holding it
+ * SETUP_HOLD_MS (5 s) and letting go opens setup mode. A bump from a door slam reads as a
+ * short press. A button still down after BUTTON_STUCK_MS is stuck: no setup, no photo. */
+static void test_button_action(void)
+{
+    CHECK(button_action(0, true) == BUTTON_NEXT_PHOTO);               /* bump or tap */
+    CHECK(button_action(4999, true) == BUTTON_NEXT_PHOTO);
+    CHECK(button_action(SETUP_HOLD_MS, true) == BUTTON_SETUP);        /* 5000 */
+    CHECK(button_action(BUTTON_STUCK_MS - 1, true) == BUTTON_SETUP);
+    CHECK(button_action(BUTTON_STUCK_MS, false) == BUTTON_STUCK);     /* never let go */
+}
+
+/* Which pins may wake the magnet. Unwired pins never (they would float); a button that
+ * is down now is left out, so a stuck button cannot wake it in a loop. */
+static void test_wake_pins(void)
+{
+    CHECK(wake_pins(false, false, false) == 0);                       /* compact or v1, no MPU */
+    CHECK(wake_pins(false, true, false) == 0);                        /* unwired D5 reads low: ignore */
+    CHECK(wake_pins(true, false, false) == WAKE_PIN_D5);
+    CHECK(wake_pins(true, true, false) == 0);                         /* stuck button */
+    CHECK(wake_pins(false, false, true) == WAKE_PIN_D9);
+    CHECK(wake_pins(true, false, true) == (WAKE_PIN_D5 | WAKE_PIN_D9));
+    CHECK(wake_pins(true, true, true) == WAKE_PIN_D9);
+}
+
 int main(void)
 {
     test_frame_ok();
@@ -155,6 +180,8 @@ int main(void)
     test_shake_allowed();
     test_remaining_sleep_seconds();
     test_boot_action();
+    test_button_action();
+    test_wake_pins();
     if (failures) {
         printf("%d check(s) failed\n", failures);
         return 1;
