@@ -27,10 +27,15 @@ with tempfile.TemporaryDirectory() as tmp:
     bodies = {b["name"]: b["bbox"] for b in json.loads(out.read_text())[-1]["bodies"]}
 tray_top, sheet_lo, sheet_hi = bodies["Tray"]["max"][2], bodies["FrontSheet"]["min"][2], bodies["FrontSheet"]["max"][2]
 ok = True
-for what, got, want in (("tray rim", tray_top, env["ShellH"] - mask - tape), ("sheet back", sheet_lo, env["ShellH"]),
-                        ("overall", sheet_hi, 7.15)):
+inset = env.get("SheetLip", 0.0) + env.get("SheetGap", 0.0)
+sheet_x0, sheet_y0 = bodies["FrontSheet"]["min"][0], bodies["FrontSheet"]["min"][1]
+for what, got, want in (("lip top flush with the sheet face", tray_top, env["ShellH"] + env["SheetT"]),
+                        ("sheet back", sheet_lo, env["ShellH"]), ("overall", sheet_hi, 7.15),
+                        ("sheet inset from the left edge (lip + gap)", sheet_x0, 0.95),
+                        ("sheet inset from the bottom edge (lip + gap)", sheet_y0, 0.95)):
     good = abs(got - want) < 0.01
     ok &= good
     print(f"{'ok  ' if good else 'FAIL'} {what}: {got:.3f} (want {want:.3f})")
-print(f"mask {mask:g} + tape {tape:g} between the rim and the sheet")
+rim = env["ShellH"] - mask - tape
+print(f"mask {mask:g} + tape {tape:g} between the rim ({rim:.2f}) and the sheet")
 sys.exit(0 if ok and tape > 0 else 1)

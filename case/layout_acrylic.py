@@ -33,8 +33,11 @@ ANT_L, ANT_H, ANT_T = 44.0, 4.5, 0.2    # Cdebyte TX2400-FPC-4405 (listing specs
 # Choices
 SHEET_T, MASK_T = 1.0, 0.1              # acrylic sheet; vinyl mask on its back (all but the window)
 TAPE_T = 0.25                           # tape between the mask and the tray's rim, rib and ledge
-WALL, BACK_WALL, CLEAR, FOLD, MASK = 1.2, 1.0, 0.3, 2.0, 0.5
-CHIN_WALL = 1.0                         # bottom wall: 1.0 so the antenna clears the cable fold (ledger)
+RIM_W, SHEET_GAP, SHEET_LIP = 1.2, 0.15, 0.8  # rim the sheet rests on, fit gap, lip flush with the sheet (Erik)
+WALL = RIM_W + SHEET_GAP + SHEET_LIP     # side and top walls
+BACK_WALL, CLEAR, FOLD, MASK = 1.0, 0.3, 2.0, 0.5
+CHIN_WALL = 1.0                         # bottom wall: 1.0 so the antenna clears the cable fold (ledger); the
+                                        # lip runs along it too, and the chin ledge carries the sheet there
 PIC_RATIO = 4 / 3
 XIAO_GAP = 0.65                         # Ruling: 0.75 less the mask's 0.1; joint room stays 0.45
 JOINT = 0.45                            # battery wire joints on the XIAO's pads (as compact)
@@ -50,7 +53,7 @@ PIN_D = 1.2
 
 CASE_W = PANEL_W + 2 * (CLEAR + WALL)
 panel_x = WALL + CLEAR
-panel_y = max(USB_LEN + CLEAR, WALL + FOLD + CLEAR)
+panel_y = max(USB_LEN + CLEAR, CHIN_WALL + FOLD + CLEAR)
 CASE_H = panel_y + PANEL_H + CLEAR + WALL
 INNER = max(MASK_T + PANEL_T + BATT_T + 2 * CLEAR,
             MASK_T + PANEL_T + XIAO_GAP + XIAO_BODY_T + CLEAR,
@@ -135,6 +138,8 @@ for b in bars:
         assert batt_back_gap >= MAG_PROUD + CLEAR - 1e-9, "magnet pad under the battery without depth to spare"
 assert batt[1] + BATT_H <= inner_top - CLEAR + 1e-9, "battery hits the top wall"
 assert rib[0] + rib[2] <= fold[0] - CLEAR, "rib hits the cable fold"
+assert SHEET_LIP + SHEET_GAP < CHIN_WALL, "sheet edge misses the bottom wall and ledge"
+assert RIM_W >= 1.0, "too little rim for the tape at the sides and top"
 assert ant[0] + ant[2] <= notch[0] - CLEAR + 1e-9, "antenna runs into the USB-C notch"
 assert ant[1] + ant[3] <= fold[1] + 1e-9, "antenna overlaps the cable fold"
 assert not overlap(ant, rib), "antenna hits the cross rib"
@@ -211,6 +216,10 @@ a.text(T / 2, -14, f"{T:.2f}", ha="center", va="top", fontsize=10)
 a.set_xlim(-6, T + 8); a.set_ylim(-18, CASE_H + 4); a.set_aspect("equal"); a.axis("off")
 a.set_title("Section through the XIAO\n(front left)", fontsize=10)
 
+sheet_in = SHEET_LIP + SHEET_GAP
+ax.add_patch(FancyBboxPatch((sheet_in, sheet_in), CASE_W - 2 * sheet_in, CASE_H - 2 * sheet_in,
+                            boxstyle=f"round,pad=0,rounding_size={CORNER_R - sheet_in}", fc="none", ec=BLUE, lw=0.8))
+ax.text(CASE_W / 2, CASE_H - 0.3, f"acrylic edge, in a {SHEET_LIP:g} lip", ha="center", va="top", fontsize=6, color=BLUE)
 chin = win[1]
 fig.suptitle(f"Acrylic-front case, 3:4 picture, mounting A: {CASE_W:.1f} x {CASE_H:.1f} x {T:.2f} mm "
              f"(compact today: 64.6 x 96.5 x 6.85)", fontsize=12)
@@ -227,4 +236,5 @@ print(f"bond stack: rim at {T - z_bond:.2f} from the back, then mask {MASK_T:g} 
 print(f"battery-to-back-wall gap {batt_back_gap:.2f} (bosses stand {MAG_PROUD:g} proud); battery top {batt[1] + BATT_H:.2f} "
       f"vs inner top {inner_top:.2f}; magnet bars: {sum(b[0] < CASE_W / 2 for b in bars)} left, {sum(b[0] > CASE_W / 2 for b in bars)} right")
 print(f"antenna x {ant[0]:.1f}..{ant[0] + ant[2]:.1f} (notch at {notch[0]:.2f}), y {ant[1]:.1f}..{ant[1] + ant[3]:.1f} (cable fold from {fold[1]:.1f}), front face {z_ant:.1f} from the front, {T - z_ant - ANT_T:.2f} from the back face; lowest left magnet {panel_y + 1.0 - ant[1] - ant[3]:.1f} above it")
+print(f"sheet {CASE_W - 2 * sheet_in:.2f} x {CASE_H - 2 * sheet_in:.2f} (R {CORNER_R - sheet_in:.2f}) in a {SHEET_LIP:g} lip, gap {SHEET_GAP:g}; side walls {WALL:.2f}")
 print(f"wrote {out}")
