@@ -92,7 +92,7 @@ Spec: `docs/superpowers/specs/2026-11-22-acrylic-front-case-design.md`.
   print a test patch first.
 - **Renders:** `render_acrylic_inside.png` (sheet hidden), `render_acrylic_back.png`,
   `render_acrylic_edge.png` (bottom edge: plunger slot and USB-C notch),
-  `render_acrylic_chin.png` (bottom-left corner: slot, ledge, rib), `render_acrylic_lip.png`
+  `render_acrylic_chin.png` (bottom-left corner, strip hidden: slot, strip step, rib, backstop), `render_acrylic_lip.png`
   (top-left corner: the sheet in the lip).
 - **Unmeasured:** everything from the datasheets, as for the other versions, plus the switch.
 
