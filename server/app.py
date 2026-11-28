@@ -25,6 +25,9 @@ from imaging import render_frame
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 LOW_BATTERY_MV = 3500
 FRAME_BYTES = 172_800
+# Failed logins allowed per client address in LOGIN_WINDOW_S before /login answers 429.
+LOGIN_MAX_FAILURES = 5
+LOGIN_WINDOW_S = 15 * 60
 STATIC_DIR = Path(__file__).parent / "static"
 log = logging.getLogger(__name__)
 _rng = random.SystemRandom()
@@ -222,6 +225,23 @@ def create_app() -> FastAPI:
         max_age=60 * 60 * 24 * 30,
     )
 
+    app.state.login_clock = time.monotonic     # tests swap in a fake clock
+    login_failures: dict[str, list[float]] = {}  # client address -> times of recent failures
+
+    def client_address(request: Request) -> str:
+        """Behind the Cloudflare Tunnel every request comes from cloudflared, so the visitor is
+        in CF-Connecting-IP. Safe to trust: the port is bound to 127.0.0.1 (docker-compose.yml)."""
+        cf = request.headers.get("CF-Connecting-IP", "").strip()
+        return cf or (request.client.host if request.client else "unknown")
+
+    def recent_failures(addr: str, now: float) -> list[float]:
+        times = [t for t in login_failures.get(addr, []) if now - t < LOGIN_WINDOW_S]
+        if times:
+            login_failures[addr] = times
+        else:
+            login_failures.pop(addr, None)
+        return times
+
     def require_login(request: Request) -> None:
         if not request.session.get("auth"):
             raise HTTPException(status_code=401, detail="login required")
@@ -254,8 +274,16 @@ def create_app() -> FastAPI:
 
     @app.post("/login")
     def login(request: Request, password: str = Form(...)) -> dict:
+        addr, now = client_address(request), app.state.login_clock()
+        times = recent_failures(addr, now)
+        if len(times) >= LOGIN_MAX_FAILURES:
+            wait = int(times[0] + LOGIN_WINDOW_S - now) + 1
+            raise HTTPException(status_code=429, detail=f"too many tries; wait {wait // 60 + 1} minutes",
+                                headers={"Retry-After": str(wait)})
         if not _verify_password(password, password_hash):
+            login_failures.setdefault(addr, []).append(now)
             raise HTTPException(status_code=401, detail="wrong password")
+        login_failures.pop(addr, None)
         request.session["auth"] = True
         return {"ok": True}
 

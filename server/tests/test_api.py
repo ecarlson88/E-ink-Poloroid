@@ -103,6 +103,63 @@ def test_login_wrong_password(client):
     assert client.post("/login", data={"password": "nope"}).status_code == 401
 
 
+def _login(c, password, ip="203.0.113.7"):
+    return c.post("/login", data={"password": password}, headers={"CF-Connecting-IP": ip})
+
+
+class _Clock:
+    def __init__(self):
+        self.t = 1000.0
+
+    def __call__(self):
+        return self.t
+
+
+def test_login_throttled_after_five_failures(client):
+    """Erik's follow-up: an internet-facing login page must not allow endless guessing."""
+    from app import LOGIN_MAX_FAILURES
+    for _ in range(LOGIN_MAX_FAILURES):
+        assert _login(client, "nope").status_code == 401
+    r = _login(client, PASSWORD)          # blocked even with the right password
+    assert r.status_code == 429
+    assert int(r.headers["Retry-After"]) > 0
+    assert client.get("/api/photos").status_code == 401
+
+
+def test_login_throttle_is_per_client_ip(client):
+    from app import LOGIN_MAX_FAILURES
+    for _ in range(LOGIN_MAX_FAILURES):
+        _login(client, "nope", ip="203.0.113.7")
+    assert _login(client, PASSWORD, ip="198.51.100.2").status_code == 200
+
+
+def test_login_throttle_ends_after_window(client):
+    from app import LOGIN_MAX_FAILURES, LOGIN_WINDOW_S
+    clock = _Clock()
+    client.app.state.login_clock = clock
+    for _ in range(LOGIN_MAX_FAILURES):
+        _login(client, "nope")
+    assert _login(client, PASSWORD).status_code == 429
+    clock.t += LOGIN_WINDOW_S + 1
+    assert _login(client, PASSWORD).status_code == 200
+
+
+def test_login_success_clears_failures(client):
+    from app import LOGIN_MAX_FAILURES
+    for _ in range(LOGIN_MAX_FAILURES - 1):
+        _login(client, "nope")
+    assert _login(client, PASSWORD).status_code == 200
+    for _ in range(LOGIN_MAX_FAILURES - 1):
+        assert _login(client, "nope").status_code == 401
+
+
+def test_login_throttle_without_cloudflare_header_uses_peer(client):
+    from app import LOGIN_MAX_FAILURES
+    for _ in range(LOGIN_MAX_FAILURES):
+        client.post("/login", data={"password": "nope"})
+    assert client.post("/login", data={"password": PASSWORD}).status_code == 429
+
+
 def test_upload_rejects_non_image(logged_in):
     r = logged_in.post("/api/photos", files={"file": ("p.jpg", b"hello", "image/jpeg")})
     assert r.status_code == 400
