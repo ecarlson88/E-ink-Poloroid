@@ -1,0 +1,100 @@
+<!doctype html>
+<!-- The card that goes in the box with the magnet (Task 7 Step 6). One card per case type:
+     print the page (4 x 6 in cards, one per sheet) and cut out the one for the case you built.
+     Facts it relies on: settings.h (DOUBLE_PRESS_WINDOW_MS 5 s, SETUP_HOLD_MS 5 s, the 8 a day
+     cap), setup_screen.h (network FridgeMagnet-Setup), logic.c (low-battery icon top right). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magnet setup card</title>
+<style>
+  :root { --ink: #1d1d1f; --soft: #5b5b60; --line: #d6d6db; --paper: #ffffff; --bg: #ececef; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--ink);
+         font: 13px/1.38 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .card { width: 100%; max-width: 4in; min-height: 6in; margin: 0 auto 24px; padding: 0.3in 0.3in 0.25in;
+          background: var(--paper); border: 1px solid var(--line); border-radius: 6px; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  .sub { color: var(--soft); margin: 0 0 12px; font-size: 12px; }
+  h2 { font-size: 14px; margin: 14px 0 4px; }
+  p, ol, ul { margin: 0 0 6px; }
+  ol, ul { padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .net { font-weight: 700; white-space: nowrap; }
+  .foot { margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--soft); font-size: 12px; }
+  .note { max-width: 4in; margin: 0 auto 24px; color: var(--soft); font-size: 12px; }
+  @media print {
+    body { background: none; padding: 0; }
+    .note { display: none; }
+    body { font-size: 12px; line-height: 1.32; }
+    h2 { margin-top: 10px; }
+    .card { border: none; border-radius: 0; margin: 0; padding: 0.25in 0.28in 0.2in;
+            min-height: 0; height: 6in; page-break-after: always; }
+    @page { size: 4in 6in; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<p class="note">Two cards: the compact case (reset through a pinhole) and the acrylic-front case
+(button on the bottom edge). Print, then keep the one for the magnet you built. Replace
+"Erik" in the last line if someone else should be called.</p>
+
+<!-- ============================ Compact case ============================ -->
+<section class="card">
+  <h1>Your photo magnet</h1>
+  <p class="sub">A new photo every day, all by itself.</p>
+
+  <h2>Every day</h2>
+  <p>The magnet changes its photo once a day. It needs your home Wi-Fi to get new photos.
+  It holds the picture even with no power.</p>
+
+  <h2>Charging</h2>
+  <p>When a small battery sign appears in a corner of the photo, charge it with a USB-C
+  phone charger. It lasts months between charges.</p>
+
+  <h2>New Wi-Fi or new password?</h2>
+  <p>If the magnet can't connect, it shows a <b>Wi-Fi setup</b> screen by itself.
+  To start setup yourself: push a paperclip gently into the small hole on the back,
+  <b>twice</b> (the second press within 5 seconds).</p>
+  <ol>
+    <li>On your phone, open Wi-Fi settings and join <span class="net">FridgeMagnet-Setup</span>.</li>
+    <li>A page opens. (If not, open any website.)</li>
+    <li>Choose your home Wi-Fi, type its password, tap <b>Save</b>.</li>
+  </ol>
+  <p>A new photo appears in about a minute. Pressing the hole <b>once</b> just shows a new photo.</p>
+
+  <p class="foot">Questions? Call Erik. Please don't open the case.</p>
+</section>
+
+<!-- ========================= Acrylic-front case ========================= -->
+<section class="card">
+  <h1>Your photo magnet</h1>
+  <p class="sub">A new photo every day, all by itself.</p>
+
+  <h2>Every day</h2>
+  <p>The magnet changes its photo once a day. It needs your home Wi-Fi to get new photos.
+  It holds the picture even with no power.</p>
+  <p><b>Want another photo?</b> Press the button on the bottom edge once. (Up to 8 extra a day,
+  a few minutes apart.)</p>
+
+  <h2>Charging</h2>
+  <p>When a small battery sign appears in a corner of the photo, charge it with a USB-C
+  phone charger. It lasts months between charges.</p>
+
+  <h2>New Wi-Fi or new password?</h2>
+  <p>If the magnet can't connect, it shows a <b>Wi-Fi setup</b> screen by itself.
+  To start setup yourself: <b>hold</b> the button on the bottom edge for 5 seconds, then let go.</p>
+  <ol>
+    <li>On your phone, open Wi-Fi settings and join <span class="net">FridgeMagnet-Setup</span>.</li>
+    <li>A page opens. (If not, open any website.)</li>
+    <li>Choose your home Wi-Fi, type its password, tap <b>Save</b>.</li>
+  </ol>
+  <p>A new photo appears in about a minute.</p>
+
+  <p class="foot">Questions? Call Erik. Please don't open the case.</p>
+</section>
+
+</body>
+</html>
