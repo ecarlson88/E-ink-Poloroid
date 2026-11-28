@@ -555,7 +555,9 @@ async function upload(files) {
 $("login").onsubmit = async (e) => {
   e.preventDefault();
   const r = await fetch("/login", { method: "POST", body: new FormData(e.target) });
-  $("login-msg").textContent = r.ok ? "" : "Wrong password";
+  $("login-msg").textContent = r.ok ? ""
+    : r.status === 429 ? "Too many wrong tries. Wait 15 minutes, then try again."
+    : "Wrong password";
   if (r.ok) { e.target.reset(); refresh(); }
 };
 $("logout").onclick = async () => { await fetch("/logout", { method: "POST" }); show(false); };
